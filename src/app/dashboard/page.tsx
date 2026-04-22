@@ -1,0 +1,452 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Calendar as CalendarIcon, Plus, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { useUser } from '@clerk/nextjs';
+import { formatPnL, getPnLColor, getPnLBgColor, getPnLBorderColor } from '@/lib/utils';
+import { tradeService } from '@/lib/store';
+import { DailyTotal } from '@/lib/types';
+import TradeModal from '@/components/trades/TradeModal';
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const { user, isLoaded, isSignedIn } = useUser();
+  const [dailyTotals, setDailyTotals] = useState<DailyTotal[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [stats, setStats] = useState({
+    totalTrades: 0,
+    totalPnL: 0,
+    winRate: 0,
+    avgPnL: 0,
+  });
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push('/');
+      return;
+    }
+    if (isLoaded && isSignedIn) {
+      loadDashboardData();
+    }
+  }, [router, isLoaded, isSignedIn]);
+
+  const loadDashboardData = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      
+      const totals = await tradeService.getDailyTotals(user.id, year, month);
+      setDailyTotals(totals);
+
+      // Calculate stats
+      const allTrades = totals.flatMap(d => d.trades);
+      const totalTrades = allTrades.length;
+      const totalPnL = allTrades.reduce((sum, t) => sum + t.pnl, 0);
+      const winningTrades = allTrades.filter(t => t.pnl > 0).length;
+      const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
+      const avgPnL = totalTrades > 0 ? totalPnL / totalTrades : 0;
+
+      setStats({
+        totalTrades,
+        totalPnL,
+        winRate,
+        avgPnL,
+      });
+    } catch (err) {
+      console.error('Failed to load dashboard data:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDateClick = (info: any) => {
+    setSelectedDate(info.dateStr);
+    setIsModalOpen(true);
+  };
+
+  const handleTradeSubmit = async (tradeData: any) => {
+    if (!user) return;
+
+    try {
+      await tradeService.createTrade(user.id, {
+        ...tradeData,
+        userId: user.id,
+      });
+      await loadDashboardData();
+      setIsModalOpen(false);
+      setSelectedDate('');
+    } catch (err) {
+      console.error('Failed to create trade:', err);
+    }
+  };
+
+  const getCalendarDays = () => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    const endDate = new Date(lastDay);
+    endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
+
+    const days = [];
+    const current = new Date(startDate);
+    
+    while (current <= endDate) {
+      days.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+    
+    return days;
+  };
+
+  const getDailyTotalForDate = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return dailyTotals.find(d => d.date === dateStr);
+  };
+
+  const handlePrevMonth = () => {
+    setCurrentMonth(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(newDate.getMonth() - 1);
+      return newDate;
+    });
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonth(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(newDate.getMonth() + 1);
+      return newDate;
+    });
+  };
+
+  const handleToday = () => {
+    setCurrentMonth(new Date());
+  };
+
+  if (isLoaded && !isSignedIn) {
+    return null;
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <CalendarIcon className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
+              <p className="text-sm text-muted-foreground">Welcome back, {user.fullName || user.emailAddresses[0]?.emailAddress}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <Button
+              onClick={() => setIsModalOpen(true)}
+              className="bg-primary hover:bg-primary/90"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Trade
+            </Button>
+            <Button variant="ghost" onClick={() => router.push('/analytics')}>
+              Analytics
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-foreground">Total Trades</CardTitle>
+              <CardDescription className="text-muted-foreground">All time</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">{stats.totalTrades}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-foreground">Total PnL</CardTitle>
+              <CardDescription className="text-muted-foreground">All time</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${getPnLColor(stats.totalPnL)}`}>
+                {formatPnL(stats.totalPnL)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-foreground">Win Rate</CardTitle>
+              <CardDescription className="text-muted-foreground">Percentage</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">{stats.winRate.toFixed(1)}%</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-foreground">Avg PnL</CardTitle>
+              <CardDescription className="text-muted-foreground">Per trade</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${getPnLColor(stats.avgPnL)}`}>
+                {formatPnL(stats.avgPnL)}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Calendar View */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-3">
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-foreground">Trade Calendar</CardTitle>
+                    <CardDescription className="text-muted-foreground">
+                      Click on a day to add a trade
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                      <TrendingUp className="w-3 h-3 mr-1" />
+                      Profit
+                    </Badge>
+                    <Badge variant="secondary" className="bg-destructive/10 text-destructive border-destructive/20">
+                      <TrendingDown className="w-3 h-3 mr-1" />
+                      Loss
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="calendar-container">
+                  <style jsx global>{`
+                    .fc-daygrid-day-frame {
+                      min-height: 80px;
+                    }
+                    .fc-day-total {
+                      margin-top: 4px;
+                      text-align: center;
+                    }
+                    .fc-day-pnl {
+                      font-size: 12px;
+                      font-weight: 600;
+                    }
+                    .fc-day-has-trades {
+                      background-color: var(--color-primary) !important;
+                      border: 1px solid var(--color-primary) !important;
+                      opacity: 0.15;
+                    }
+                    .fc-day-profit {
+                      background-color: var(--color-primary) !important;
+                      border: 1px solid var(--color-primary) !important;
+                      opacity: 0.25;
+                    }
+                    .fc-day-loss {
+                      background-color: var(--color-destructive) !important;
+                      border: 1px solid var(--color-destructive) !important;
+                      opacity: 0.25;
+                    }
+                    .fc-day-breakeven {
+                      background-color: var(--color-muted) !important;
+                      border: 1px solid var(--color-muted) !important;
+                      opacity: 0.25;
+                    }
+                    .fc-toolbar-title {
+                      color: var(--color-foreground);
+                    }
+                    .fc-button {
+                      background-color: var(--color-card);
+                      border-color: var(--color-border);
+                      color: var(--color-foreground);
+                    }
+                    .fc-button:hover {
+                      background-color: var(--color-accent);
+                    }
+                    .fc-daygrid-day-top {
+                      color: var(--color-muted-foreground);
+                    }
+                    .fc-daygrid-day-number {
+                      color: var(--color-foreground);
+                    }
+                  `}</style>
+                  
+                  <div className="space-y-4">
+                    {/* Calendar Header */}
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-foreground">
+                        {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                      </h3>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handlePrevMonth}
+                          className="border-border text-foreground hover:bg-accent"
+                        >
+                          Previous
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleToday}
+                          className="border-border text-foreground hover:bg-accent"
+                        >
+                          Today
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleNextMonth}
+                          className="border-border text-foreground hover:bg-accent"
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Week Days Header */}
+                    <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground font-medium">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                        <div key={day} className="p-2">
+                          {day}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Calendar Grid */}
+                    <div className="grid grid-cols-7 gap-1">
+                      {getCalendarDays().map((day, index) => {
+                        const dailyTotal = getDailyTotalForDate(day);
+                        const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
+                        const isToday = day.toDateString() === new Date().toDateString();
+                        const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+
+                        return (
+                          <div
+                            key={index}
+                            className={`min-h-16 p-1 border border-border rounded-sm cursor-pointer transition-colors hover:bg-accent ${
+                              !isCurrentMonth ? 'opacity-50' : ''
+                            } ${
+                              isToday ? 'ring-2 ring-primary' : ''
+                            } ${
+                              dailyTotal ? 'bg-primary/10 border-primary/30' : ''
+                            }`}
+                            onClick={() => {
+                              setSelectedDate(day.toISOString().split('T')[0]);
+                              setIsModalOpen(true);
+                            }}
+                          >
+                            <div className={`text-sm ${
+                              isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'
+                            } ${isWeekend ? 'font-medium' : ''}`}>
+                              {day.getDate()}
+                            </div>
+                            {dailyTotal && (
+                              <div className="mt-1 space-y-1">
+                                <div className={`text-xs font-semibold ${getPnLColor(dailyTotal.totalPnl)}`}>
+                                  {formatPnL(dailyTotal.totalPnl)}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {dailyTotal.tradeCount} trade{dailyTotal.tradeCount !== 1 ? 's' : ''}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Legend */}
+                    <div className="flex gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-primary/20 border border-primary/40 rounded" />
+                        <span>Profit Day</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-destructive/20 border border-destructive/40 rounded" />
+                        <span>Loss Day</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-muted/20 border border-muted/40 rounded" />
+                        <span>No Trades</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="lg:col-span-1">
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-foreground">Quick Actions</CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  Manage your trades
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button
+                  onClick={() => setIsModalOpen(true)}
+                  className="w-full bg-primary hover:bg-primary/90"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Trade
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/analytics')}
+                  className="w-full border-border text-foreground hover:bg-accent"
+                >
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  View Analytics
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </main>
+
+      {/* Trade Modal */}
+      <TradeModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedDate('');
+        }}
+        onSubmit={handleTradeSubmit}
+        isLoading={isLoading}
+        trade={selectedDate ? { date: selectedDate } as any : undefined}
+      />
+    </div>
+  );
+}

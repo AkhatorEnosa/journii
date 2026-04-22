@@ -1,36 +1,207 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Journii - Trade Journal
 
-## Getting Started
+A beautiful, powerful trade journal built with Next.js, TypeScript, and shadcn/ui. Track your trades, analyze your performance, and become a more profitable trader.
 
-First, run the development server:
+## Features
 
+### 📊 **Calendar View**
+- Visualize your trades on an interactive calendar
+- Color-coded PnL indicators (green for profit, red for loss)
+- Click on any day to add new trades
+
+### 📈 **Performance Analytics**
+- Real-time PnL tracking and calculations
+- Win rate analysis by day of week
+- Symbol performance tracking
+- Direction performance (Long vs Short)
+- Interactive charts using Recharts
+
+### 🎯 **Trade Management**
+- Add, edit, and delete trades
+- Track entry/exit prices, PnL, direction, and notes
+- Tag trades for easy categorization
+- Manual PnL entry for flexibility
+
+### 🛡️ **Secure & Private**
+- Local storage for data privacy
+- Optional Supabase integration for cloud sync
+- Authentication system with user management
+
+### 🎨 **Beautiful UI**
+- Dark theme with modern design
+- Built with shadcn/ui components
+- Fully responsive design
+- Accessible and keyboard-friendly
+
+## Tech Stack
+
+- **Next.js 14** - React framework with App Router
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first CSS framework
+- **shadcn/ui** - Beautiful, accessible UI components
+- **Recharts** - Interactive data visualization
+- **FullCalendar** - Calendar component
+- **Lucide React** - Icon library
+- **Supabase** - Optional backend (PostgreSQL + Auth)
+
+## Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd journii
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Configure Supabase (optional):
+```
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-## Learn More
+5. Start the development server:
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── page.tsx           # Landing page
+│   ├── login/             # Authentication pages
+│   ├── signup/
+│   ├── dashboard/         # Main dashboard with calendar
+│   └── analytics/         # Performance analytics
+├── components/            # React components
+│   ├── ui/               # shadcn/ui components
+│   ├── auth/             # Authentication components
+│   └── trades/           # Trade-related components
+├── lib/                  # Utilities and services
+│   ├── types.ts          # TypeScript interfaces
+│   ├── utils.ts          # Utility functions
+│   ├── store.ts          # State management
+│   └── supabase/         # Supabase configuration
+└── middleware.ts         # Next.js middleware
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Key Components
 
-## Deploy on Vercel
+### Dashboard (`/dashboard`)
+- Interactive calendar view
+- Daily PnL visualization
+- Quick trade addition
+- Summary statistics
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Analytics (`/analytics`)
+- Performance charts and graphs
+- Win rate analysis
+- Symbol performance tracking
+- Direction analysis
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Trade Modal
+- Form for adding/editing trades
+- Real-time PnL calculation preview
+- Tag management
+- Validation and error handling
+
+### Trade List (Sidebar)
+- Detailed trade listing
+- Sortable table with PnL, direction, date
+- Edit and delete functionality
+- Summary statistics
+
+## Data Model
+
+### Trade
+```typescript
+interface Trade {
+  id: string;
+  userId: string;
+  symbol: string;
+  entryPrice: number;
+  exitPrice: number;
+  pnl: number; // Manual PnL - source of truth
+  direction: 'long' | 'short';
+  notes: string;
+  tags: string[];
+  date: string; // ISO date string (YYYY-MM-DD)
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+## Development
+
+### Adding New Features
+
+1. **Create Components**: Use shadcn/ui for consistent styling
+2. **Type Safety**: Always define TypeScript interfaces
+3. **State Management**: Use the existing trade service pattern
+4. **Styling**: Follow the dark theme color scheme
+5. **Accessibility**: Ensure all interactive elements are accessible
+
+### Running Tests
+
+```bash
+npm run test
+```
+
+### Building for Production
+
+```bash
+npm run build
+npm run start
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
+
+## Support
+
+For support and questions:
+- Create an issue on GitHub
+- Check the documentation
+- Review the code examples
+
+## Future Roadmap
+
+- [ ] Mobile app version
+- [ ] Advanced analytics and machine learning insights
+- [ ] Trade import/export functionality
+- [ ] Multi-currency support
+- [ ] Team/collaboration features
+- [ ] Advanced charting and technical indicators
+- [ ] Trading journal templates
+- [ ] Performance benchmarks and goals
+
+## Screenshots
+
+*(Add screenshots here when available)*
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
