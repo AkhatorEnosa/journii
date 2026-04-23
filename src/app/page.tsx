@@ -174,7 +174,7 @@ export default function Home() {
                       <SignUpButton mode="modal">
                         <Button
                           variant={plan.buttonVariant === 'primary' ? 'default' : 'secondary'}
-                          className="w-full"
+                          className="w-full py-5"
                         >
                           {plan.buttonText}
                         </Button>
@@ -184,7 +184,7 @@ export default function Home() {
                       <Link href="/dashboard">
                         <Button
                           variant={plan.buttonVariant === 'primary' ? 'default' : 'secondary'}
-                          className="w-full"
+                          className="w-full py-5"
                         >
                           {plan.buttonText}
                         </Button>

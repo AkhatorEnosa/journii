@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,34 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Update form data when trade prop changes (for editing)
+  useEffect(() => {
+    if (trade) {
+      setFormData({
+        symbol: trade.symbol || '',
+        entryPrice: trade.entryPrice || 0,
+        exitPrice: trade.exitPrice || 0,
+        pnl: trade.pnl || 0,
+        direction: trade.direction || 'long',
+        notes: trade.notes || '',
+        tags: trade.tags || [],
+        date: trade.date || new Date().toISOString().split('T')[0],
+      });
+    } else {
+      // Reset form for new trade
+      setFormData({
+        symbol: '',
+        entryPrice: 0,
+        exitPrice: 0,
+        pnl: 0,
+        direction: 'long',
+        notes: '',
+        tags: [],
+        date: new Date().toISOString().split('T')[0],
+      });
+    }
+  }, [trade]);
 
   const handleInputChange = (field: keyof TradeFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));

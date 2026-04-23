@@ -10,10 +10,11 @@
   "dependencies": {
     "@base-ui/react": "^1.4.1",
     "@clerk/nextjs": "^7.2.3",
-    "@clerk/themes": "^2.4.57",
+    "@clerk/ui": "^1.6.5",
     "@fullcalendar/react": "^6.1.20",
     "@supabase/auth-helpers-nextjs": "^0.15.0",
     "@supabase/supabase-js": "^2.104.0",
+    "@tanstack/react-query": "^5.100.1",
     "@untitled-ui/icons-react": "^0.1.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

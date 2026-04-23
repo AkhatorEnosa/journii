@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatPnL, getPnLColor, formatDate } from '@/lib/utils';
 import { tradeService } from '@/lib/store';
 import { useUser } from '@clerk/nextjs';
-import { Calendar, Edit, Trash2, AlertCircle } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Calendar, Edit, Trash2, AlertCircle, Tag } from 'lucide-react';
 import TradeModal from './TradeModal';
+import { tradeKeys } from '@/lib/hooks/useTrades';
 
 interface TradeListProps {
   selectedDate?: string;
@@ -26,6 +28,7 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const isControlled = controlledOpen !== undefined;
   const isOpen = isControlled ? controlledOpen : internalOpen;
@@ -69,6 +72,8 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
     
     try {
       await tradeService.deleteTrade(user.id, tradeId);
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: tradeKeys.all });
       await loadTrades();
     } catch (err) {
       console.error('Failed to delete trade:', err);
@@ -85,6 +90,8 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
 
     try {
       await tradeService.updateTrade(user.id, editingTrade.id, updatedTrade);
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: tradeKeys.all });
       await loadTrades();
       setIsEditModalOpen(false);
       setEditingTrade(null);
@@ -109,12 +116,6 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
   return (
     <div>
       <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-        {/* <SheetTrigger>
-          <Button variant="outline" className="w-full border-border text-foreground hover:bg-accent">
-            <Calendar className="w-4 h-4 mr-2" />
-            Trade List
-          </Button>
-        </SheetTrigger> */}
         <SheetContent className="bg-card border-border w-full sm:max-w-md">
           <SheetHeader>
             <SheetTitle className="text-foreground">
@@ -127,7 +128,7 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
 
           {/* Stats Summary */}
           {trades.length > 0 && (
-            <div className="grid grid-cols-3 gap-4 mb-6 pt-4">
+            <div className="grid grid-cols-3 gap-4 mb-6 pt-4 px-4">
               <div className="bg-muted/20 rounded-lg p-3">
                 <div className="text-sm text-muted-foreground">Total Trades</div>
                 <div className="text-lg font-bold text-foreground">{trades.length}</div>
@@ -165,7 +166,7 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
               No trades found
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 px-4">
               <div className="overflow-hidden rounded-lg border border-border">
                 <Table>
                   <TableHeader>
@@ -174,6 +175,7 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
                       <TableHead className="text-foreground">PnL</TableHead>
                       <TableHead className="text-foreground">Direction</TableHead>
                       <TableHead className="text-foreground">Date</TableHead>
+                      <TableHead className="text-foreground">Tags</TableHead>
                       <TableHead className="text-foreground">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -202,6 +204,29 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
                           {formatDate(trade.date)}
+                        </TableCell>
+                        <TableCell>
+                          {trade.tags && trade.tags.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {trade.tags.slice(0, 2).map((tag: string, idx: number) => (
+                                <Badge
+                                  key={idx}
+                                  variant="outline"
+                                  className="text-xs border-border text-muted-foreground"
+                                >
+                                  <Tag className="w-3 h-3 mr-1" />
+                                  {tag}
+                                </Badge>
+                              ))}
+                              {trade.tags.length > 2 && (
+                                <Badge variant="outline" className="text-xs border-border text-muted-foreground">
+                                  +{trade.tags.length - 2}
+                                </Badge>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">

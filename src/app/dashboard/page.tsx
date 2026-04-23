@@ -1,76 +1,52 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar as CalendarIcon, Plus, TrendingUp, TrendingDown, DollarSign, List } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { formatPnL, getPnLColor, getPnLBgColor, getPnLBorderColor } from '@/lib/utils';
-import { tradeService } from '@/lib/store';
-import { DailyTotal } from '@/lib/types';
+import { useDailyTotals, useCreateTrade, useUpdateTrade, useDeleteTrade } from '@/lib/hooks/useTrades';
 import TradeModal from '@/components/trades/TradeModal';
 import TradeList from '@/components/trades/TradeList';
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isLoaded, isSignedIn } = useUser();
-  const [dailyTotals, setDailyTotals] = useState<DailyTotal[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTradeListOpen, setIsTradeListOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [stats, setStats] = useState({
-    totalTrades: 0,
-    totalPnL: 0,
-    winRate: 0,
-    avgPnL: 0,
-  });
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      router.push('/');
-      return;
-    }
-    if (isLoaded && isSignedIn) {
-      loadDashboardData();
-    }
-  }, [router, isLoaded, isSignedIn]);
+  // React Query hooks
+  const { data: dailyTotals = [], isLoading: isLoadingTotals } = useDailyTotals(
+    user?.id || '',
+    currentMonth.getFullYear(),
+    currentMonth.getMonth()
+  );
 
-  const loadDashboardData = async () => {
-    if (!user) return;
-    
-    setIsLoading(true);
-    try {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth();
-      
-      const totals = await tradeService.getDailyTotals(user.id, year, month);
-      setDailyTotals(totals);
+  const createTradeMutation = useCreateTrade();
+  const updateTradeMutation = useUpdateTrade();
+  const deleteTradeMutation = useDeleteTrade();
 
-      // Calculate stats
-      const allTrades = totals.flatMap(d => d.trades);
-      const totalTrades = allTrades.length;
-      const totalPnL = allTrades.reduce((sum, t) => sum + t.pnl, 0);
-      const winningTrades = allTrades.filter(t => t.pnl > 0).length;
-      const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
-      const avgPnL = totalTrades > 0 ? totalPnL / totalTrades : 0;
+  // Calculate stats from daily totals
+  const stats = useMemo(() => {
+    const allTrades = dailyTotals.flatMap(d => d.trades);
+    const totalTrades = allTrades.length;
+    const totalPnL = allTrades.reduce((sum, t) => sum + t.pnl, 0);
+    const winningTrades = allTrades.filter(t => t.pnl > 0).length;
+    const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
+    const avgPnL = totalTrades > 0 ? totalPnL / totalTrades : 0;
 
-      setStats({
-        totalTrades,
-        totalPnL,
-        winRate,
-        avgPnL,
-      });
-    } catch (err) {
-      console.error('Failed to load dashboard data:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    return {
+      totalTrades,
+      totalPnL,
+      winRate,
+      avgPnL,
+    };
+  }, [dailyTotals]);
 
   const handleDateClick = (date: Date) => {
     // Prevent clicking on future dates
@@ -97,11 +73,10 @@ export default function DashboardPage() {
     if (!user) return;
 
     try {
-      await tradeService.createTrade(user.id, {
+      await createTradeMutation.mutateAsync({
         ...tradeData,
         userId: user.id,
       });
-      await loadDashboardData();
       setIsModalOpen(false);
       setSelectedDate('');
     } catch (err) {
@@ -171,7 +146,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="py-8 mt-10 border-b border-border bg-card/80 backdrop-blur-sm z-50">
+      <header className="py-4 mt-10 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
@@ -254,7 +229,7 @@ export default function DashboardPage() {
                   <div>
                     <CardTitle className="text-foreground">Trade Calendar</CardTitle>
                     <CardDescription className="text-muted-foreground">
-                      Click on a day to add a trade
+                      Click on a day to view trades
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
@@ -271,57 +246,6 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="calendar-container">
-                  <style jsx global>{`
-                    .fc-daygrid-day-frame {
-                      min-height: 80px;
-                    }
-                    .fc-day-total {
-                      margin-top: 4px;
-                      text-align: center;
-                    }
-                    .fc-day-pnl {
-                      font-size: 12px;
-                      font-weight: 600;
-                    }
-                    .fc-day-has-trades {
-                      background-color: var(--color-primary) !important;
-                      border: 1px solid var(--color-primary) !important;
-                      opacity: 0.15;
-                    }
-                    .fc-day-profit {
-                      background-color: var(--color-primary) !important;
-                      border: 1px solid var(--color-primary) !important;
-                      opacity: 0.25;
-                    }
-                    .fc-day-loss {
-                      background-color: var(--color-destructive) !important;
-                      border: 1px solid var(--color-destructive) !important;
-                      opacity: 0.25;
-                    }
-                    .fc-day-breakeven {
-                      background-color: var(--color-muted) !important;
-                      border: 1px solid var(--color-muted) !important;
-                      opacity: 0.25;
-                    }
-                    .fc-toolbar-title {
-                      color: var(--color-foreground);
-                    }
-                    .fc-button {
-                      background-color: var(--color-card);
-                      border-color: var(--color-border);
-                      color: var(--color-foreground);
-                    }
-                    .fc-button:hover {
-                      background-color: var(--color-accent);
-                    }
-                    .fc-daygrid-day-top {
-                      color: var(--color-muted-foreground);
-                    }
-                    .fc-daygrid-day-number {
-                      color: var(--color-foreground);
-                    }
-                  `}</style>
-                  
                   <div className="space-y-4">
                     {/* Calendar Header */}
                     <div className="flex items-center justify-between">
@@ -424,7 +348,7 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 sticky top-10">
             <Card className="bg-card border-border">
               <CardHeader>
                 <CardTitle className="text-foreground">Quick Actions</CardTitle>
@@ -467,7 +391,7 @@ export default function DashboardPage() {
           setSelectedDate('');
         }}
         onSubmit={handleTradeSubmit}
-        isLoading={isLoading}
+        isLoading={createTradeMutation.isPending}
         trade={selectedDate ? { date: selectedDate } as any : undefined}
       />
     </div>
