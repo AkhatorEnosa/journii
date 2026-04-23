@@ -32,12 +32,6 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [previewPnL, setPreviewPnL] = useState<number | null>(null);
-
-  const calculatePnL = (entry: number, exit: number, direction: 'long' | 'short') => {
-    if (!entry || !exit) return 0;
-    return direction === 'long' ? exit - entry : entry - exit;
-  };
 
   const handleInputChange = (field: keyof TradeFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -45,14 +39,6 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
     // Clear error for this field
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-
-    // Calculate PnL preview if entry/exit/direction changes
-    if (field === 'entryPrice' || field === 'exitPrice' || field === 'direction') {
-      const newEntry = field === 'entryPrice' ? value : formData.entryPrice;
-      const newExit = field === 'exitPrice' ? value : formData.exitPrice;
-      const newDirection = field === 'direction' ? value : formData.direction;
-      setPreviewPnL(calculatePnL(newEntry, newExit, newDirection));
     }
   };
 
@@ -77,6 +63,16 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
 
     if (!formData.date) {
       newErrors.date = 'Date is required';
+    } else {
+      // Check if date is in the future
+      const selectedDate = new Date(formData.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      selectedDate.setHours(0, 0, 0, 0);
+      
+      if (selectedDate > today) {
+        newErrors.date = 'Cannot create trades for future dates';
+      }
     }
 
     setErrors(newErrors);
@@ -105,12 +101,12 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg bg-slate-900 border-slate-800">
+      <DialogContent className="sm:max-w-lg bg-card border-border">
         <DialogHeader>
-          <DialogTitle className="text-slate-100">
+          <DialogTitle className="text-foreground">
             {trade ? 'Edit Trade' : 'Add New Trade'}
           </DialogTitle>
-          <DialogDescription className="text-slate-400">
+          <DialogDescription className="text-muted-foreground">
             Record your trade details to track your performance
           </DialogDescription>
         </DialogHeader>
@@ -118,7 +114,7 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="symbol" className="text-slate-300">
+              <Label htmlFor="symbol" className="text-foreground">
                 Symbol
               </Label>
               <Input
@@ -126,14 +122,14 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
                 placeholder="e.g., AAPL, BTC-USD"
                 value={formData.symbol}
                 onChange={(e) => handleInputChange('symbol', e.target.value)}
-                className="bg-slate-800 border-slate-700 text-slate-100"
+                className="bg-input border-border text-foreground"
                 disabled={isLoading}
               />
-              {errors.symbol && <p className="text-sm text-rose-400">{errors.symbol}</p>}
+              {errors.symbol && <p className="text-sm text-destructive">{errors.symbol}</p>}
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="direction" className="text-slate-300">
+              <Label htmlFor="direction" className="text-foreground">
                 Direction
               </Label>
               <Select
@@ -141,10 +137,10 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
                 onValueChange={(value) => handleInputChange('direction', value as 'long' | 'short')}
                 disabled={isLoading}
               >
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-slate-100">
+                <SelectTrigger className="bg-input border-border text-foreground">
                   <SelectValue placeholder="Select direction" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-slate-800">
+                <SelectContent className="bg-card border-border">
                   <SelectItem value="long">Long</SelectItem>
                   <SelectItem value="short">Short</SelectItem>
                 </SelectContent>
@@ -154,7 +150,7 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
 
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="entryPrice" className="text-slate-300">
+              <Label htmlFor="entryPrice" className="text-foreground">
                 Entry Price
               </Label>
               <Input
@@ -164,14 +160,14 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
                 placeholder="0.00"
                 value={formData.entryPrice || ''}
                 onChange={(e) => handleInputChange('entryPrice', parseFloat(e.target.value) || 0)}
-                className="bg-slate-800 border-slate-700 text-slate-100"
+                className="bg-input border-border text-foreground"
                 disabled={isLoading}
               />
-              {errors.entryPrice && <p className="text-sm text-rose-400">{errors.entryPrice}</p>}
+              {errors.entryPrice && <p className="text-sm text-destructive">{errors.entryPrice}</p>}
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="exitPrice" className="text-slate-300">
+              <Label htmlFor="exitPrice" className="text-foreground">
                 Exit Price
               </Label>
               <Input
@@ -181,14 +177,14 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
                 placeholder="0.00"
                 value={formData.exitPrice || ''}
                 onChange={(e) => handleInputChange('exitPrice', parseFloat(e.target.value) || 0)}
-                className="bg-slate-800 border-slate-700 text-slate-100"
+                className="bg-input border-border text-foreground"
                 disabled={isLoading}
               />
-              {errors.exitPrice && <p className="text-sm text-rose-400">{errors.exitPrice}</p>}
+              {errors.exitPrice && <p className="text-sm text-destructive">{errors.exitPrice}</p>}
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="pnl" className="text-slate-300">
+              <Label htmlFor="pnl" className="text-foreground">
                 PnL
               </Label>
               <Input
@@ -198,26 +194,16 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
                 placeholder="0.00"
                 value={formData.pnl || ''}
                 onChange={(e) => handleInputChange('pnl', parseFloat(e.target.value) || 0)}
-                className="bg-slate-800 border-slate-700 text-slate-100"
+                className="bg-input border-border text-foreground"
                 disabled={isLoading}
               />
-              {errors.pnl && <p className="text-sm text-rose-400">{errors.pnl}</p>}
+              {errors.pnl && <p className="text-sm text-destructive">{errors.pnl}</p>}
             </div>
           </div>
 
-          {/* PnL Preview */}
-          {previewPnL !== null && (
-            <div className={`p-3 rounded-lg border ${getPnLBorderColor(previewPnL)} ${getPnLBgColor(previewPnL)}`}>
-              <p className="text-sm text-slate-300 mb-1">Calculated PnL:</p>
-              <p className={`text-lg font-semibold ${getPnLColor(previewPnL)}`}>
-                {formatPnL(previewPnL)}
-              </p>
-            </div>
-          )}
-
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="date" className="text-slate-300">
+              <Label htmlFor="date" className="text-foreground">
                 Date
               </Label>
               <Input
@@ -225,14 +211,14 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
                 type="date"
                 value={formData.date}
                 onChange={(e) => handleInputChange('date', e.target.value)}
-                className="bg-slate-800 border-slate-700 text-slate-100"
+                className="bg-input border-border text-foreground"
                 disabled={isLoading}
               />
-              {errors.date && <p className="text-sm text-rose-400">{errors.date}</p>}
+              {errors.date && <p className="text-sm text-destructive">{errors.date}</p>}
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="tags" className="text-slate-300">
+              <Label htmlFor="tags" className="text-foreground">
                 Tags
               </Label>
               <div className="flex gap-2">
@@ -246,7 +232,7 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
                       e.currentTarget.value = '';
                     }
                   }}
-                  className="bg-slate-800 border-slate-700 text-slate-100 flex-1"
+                  className="bg-input border-border text-foreground flex-1"
                   disabled={isLoading}
                 />
               </div>
@@ -255,13 +241,13 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
                   <Badge
                     key={tag}
                     variant="secondary"
-                    className="bg-slate-800 text-slate-300 border-slate-700"
+                    className="bg-accent text-foreground border-border"
                   >
                     {tag}
                     <button
                       type="button"
                       onClick={() => handleTagRemove(tag)}
-                      className="ml-1 text-slate-400 hover:text-slate-200"
+                      className="ml-1 text-muted-foreground hover:text-foreground"
                       disabled={isLoading}
                     >
                       ×
@@ -273,7 +259,7 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes" className="text-slate-300">
+            <Label htmlFor="notes" className="text-foreground">
               Notes
             </Label>
             <Textarea
@@ -281,7 +267,7 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
               placeholder="Trade rationale, lessons learned, etc."
               value={formData.notes}
               onChange={(e) => handleInputChange('notes', e.target.value)}
-              className="bg-slate-800 border-slate-700 text-slate-100"
+              className="bg-input border-border text-foreground"
               disabled={isLoading}
               rows={3}
             />
@@ -292,14 +278,14 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
               type="button"
               variant="ghost"
               onClick={onClose}
-              className="text-slate-300 hover:text-slate-100"
+              className="text-muted-foreground hover:text-foreground"
               disabled={isLoading}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-primary hover:bg-primary/90"
               disabled={isLoading}
             >
               {isLoading ? 'Saving...' : trade ? 'Update Trade' : 'Add Trade'}

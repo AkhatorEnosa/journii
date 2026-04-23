@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar as CalendarIcon, Plus, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, TrendingUp, TrendingDown, DollarSign, List } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { formatPnL, getPnLColor, getPnLBgColor, getPnLBorderColor } from '@/lib/utils';
 import { tradeService } from '@/lib/store';
 import { DailyTotal } from '@/lib/types';
 import TradeModal from '@/components/trades/TradeModal';
+import TradeList from '@/components/trades/TradeList';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function DashboardPage() {
   const [dailyTotals, setDailyTotals] = useState<DailyTotal[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTradeListOpen, setIsTradeListOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [stats, setStats] = useState({
     totalTrades: 0,
@@ -70,9 +72,25 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDateClick = (info: any) => {
-    setSelectedDate(info.dateStr);
-    setIsModalOpen(true);
+  const handleDateClick = (date: Date) => {
+    // Prevent clicking on future dates
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(date);
+    selectedDate.setHours(0, 0, 0, 0);
+    
+    if (selectedDate > today) {
+      return; // Do nothing for future dates
+    }
+
+    // Use local date formatting to avoid timezone issues
+    const dateStr = date.toLocaleDateString('en-CA', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    setSelectedDate(dateStr);
+    setIsTradeListOpen(true);
   };
 
   const handleTradeSubmit = async (tradeData: any) => {
@@ -113,7 +131,12 @@ export default function DashboardPage() {
   };
 
   const getDailyTotalForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    // Use local date formatting to avoid timezone issues
+    const dateStr = date.toLocaleDateString('en-CA', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
     return dailyTotals.find(d => d.date === dateStr);
   };
 
@@ -148,7 +171,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="py-8 mt-10 border-b border-border bg-card/80 backdrop-blur-sm z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
@@ -235,7 +258,7 @@ export default function DashboardPage() {
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
-                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                    <Badge variant="secondary" className="bg-emerald-400/10 text-emerald-400 border-emerald-500/20">
                       <TrendingUp className="w-3 h-3 mr-1" />
                       Profit
                     </Badge>
@@ -353,17 +376,12 @@ export default function DashboardPage() {
                         return (
                           <div
                             key={index}
-                            className={`min-h-16 p-1 border border-border rounded-sm cursor-pointer transition-colors hover:bg-accent ${
-                              !isCurrentMonth ? 'opacity-50' : ''
-                            } ${
-                              isToday ? 'ring-2 ring-primary' : ''
-                            } ${
-                              dailyTotal ? 'bg-primary/10 border-primary/30' : ''
-                            }`}
-                            onClick={() => {
-                              setSelectedDate(day.toISOString().split('T')[0]);
-                              setIsModalOpen(true);
-                            }}
+                            className={`min-h-16 p-1 border border-border rounded-sm cursor-pointer transition-colors hover:bg-accent 
+                            ${!isCurrentMonth ? 'opacity-50' : ''} 
+                            ${isToday && !dailyTotal ? 'ring-2 ring-primary' : ''}
+                            ${isToday && dailyTotal ? `${getPnLBgColor(dailyTotal.totalPnl)} ${getPnLBorderColor(dailyTotal.totalPnl)}` : ''}
+                            `}
+                            onClick={() => handleDateClick(day)}
                           >
                             <div className={`text-sm ${
                               isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'
@@ -388,7 +406,7 @@ export default function DashboardPage() {
                     {/* Legend */}
                     <div className="flex gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-primary/20 border border-primary/40 rounded" />
+                        <div className="w-3 h-3 bg-emerald-400/20 border border-emerald-500/40 rounded" />
                         <span>Profit Day</span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -430,6 +448,11 @@ export default function DashboardPage() {
                   <DollarSign className="w-4 h-4 mr-2" />
                   View Analytics
                 </Button>
+                <TradeList 
+                  selectedDate={selectedDate} 
+                  isOpen={isTradeListOpen} 
+                  onOpenChange={setIsTradeListOpen} 
+                />
               </CardContent>
             </Card>
           </div>

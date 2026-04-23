@@ -43,8 +43,8 @@ export function getPnLBgColor(pnl: number): string {
 
 // Get PnL border color class
 export function getPnLBorderColor(pnl: number): string {
-  if (pnl > 0) return 'border-emerald-500/20';
-  if (pnl < 0) return 'border-rose-500/20';
+  if (pnl > 0) return 'border-emerald-500/50';
+  if (pnl < 0) return 'border-rose-500/50';
   return 'border-slate-500/20';
 }
 
