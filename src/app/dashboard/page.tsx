@@ -11,6 +11,7 @@ import { formatPnL, getPnLColor, getPnLBgColor, getPnLBorderColor } from '@/lib/
 import { useDailyTotals, useCreateTrade, useUpdateTrade, useDeleteTrade } from '@/lib/hooks/useTrades';
 import TradeModal from '@/components/trades/TradeModal';
 import TradeList from '@/components/trades/TradeList';
+import Header from '../sections/Header';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -28,8 +29,8 @@ export default function DashboardPage() {
   );
 
   const createTradeMutation = useCreateTrade();
-  const updateTradeMutation = useUpdateTrade();
-  const deleteTradeMutation = useDeleteTrade();
+  // const updateTradeMutation = useUpdateTrade();
+  // const deleteTradeMutation = useDeleteTrade();
 
   // Calculate stats from daily totals
   const stats = useMemo(() => {
@@ -146,6 +147,12 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
+      <Header />
+      {isLoadingTotals &&
+            <div className="fixed top-0 left-0 flex w-screen h-screen bg-background/50 backdrop-blur-sm justify-center items-center py-8 z-100">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+      }
       <header className="py-4 mt-10 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -303,7 +310,8 @@ export default function DashboardPage() {
                             className={`min-h-16 p-1 border border-border rounded-sm cursor-pointer transition-colors hover:bg-accent 
                             ${!isCurrentMonth ? 'opacity-50' : ''} 
                             ${isToday && !dailyTotal ? 'ring-2 ring-primary' : ''}
-                            ${isToday && dailyTotal ? `${getPnLBgColor(dailyTotal.totalPnl)} ${getPnLBorderColor(dailyTotal.totalPnl)}` : ''}
+                            ${dailyTotal ? `${getPnLBgColor(dailyTotal.totalPnl)} ${getPnLBorderColor(dailyTotal.totalPnl)}` : ''}
+                            ${isToday && dailyTotal ? `${getPnLBgColor(dailyTotal.totalPnl)} border-2 ${getPnLBorderColor(dailyTotal.totalPnl)}` : ''}
                             `}
                             onClick={() => handleDateClick(day)}
                           >

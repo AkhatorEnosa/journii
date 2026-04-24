@@ -10,6 +10,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { useUser } from '@clerk/nextjs';
 import { formatPnL, getPnLColor, formatPrice } from '@/lib/utils';
 import { tradeService } from '@/lib/store';
+import Header from '../sections/Header';
 
 // const COLORS = ['#10b981', '#f43f5e', '#6366f1', '#f59e0b', '#8b5cf6', '#ec4899'];
 
@@ -147,6 +148,12 @@ export default function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {isLoading &&
+        <div className="fixed top-0 left-0 flex w-screen h-screen bg-background/50 backdrop-blur-sm justify-center items-center py-8 z-100">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      }
+      <Header />
       <Button variant="ghost" onClick={() => router.push('/dashboard')} className="py-8 mt-10 text-muted-foreground hover:text-foreground">
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back
@@ -275,10 +282,23 @@ export default function AnalyticsPage() {
                     <Line
                       type="monotone"
                       dataKey="pnl"
-                      stroke="var(--color-emerald-400)"
+                      stroke={totalPnL >= 0 ? '#10b981' : '#f43f5e'}
                       strokeWidth={2}
-                      dot={{ fill: 'var(--color-emerald-400)', strokeWidth: 2 }}
-                      activeDot={{ r: 6, fill: 'var(--color-emerald-300)' }}
+                      dot={(props) => {
+                        const { cx, cy, payload } = props;
+                        const color = payload.pnl >= 0 ? '#10b981' : '#f43f5e';
+                        return (
+                          <circle
+                            cx={cx}
+                            cy={cy}
+                            r={4}
+                            fill={color}
+                            stroke={color}
+                            strokeWidth={2}
+                          />
+                        );
+                      }}
+                      activeDot={{ r: 6 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -313,9 +333,12 @@ export default function AnalyticsPage() {
                     />
                     <Bar
                       dataKey="totalPnl"
-                      fill="var(--color-emerald-400)"
                       radius={[4, 4, 0, 0]}
-                    />
+                    >
+                      {data.symbolPerformance.slice(0, 8).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.totalPnl >= 0 ? '#10b981' : '#f43f5e'} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -347,7 +370,7 @@ export default function AnalyticsPage() {
                       label={({ name, percent }) => name ? `${name}: ${Math.round((percent || 0) * 100)}%` : ''}
                     >
                       {data.directionPerformance.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={index === 0 ? '#10b981' : '#f43f5e'} />
+                        <Cell key={`cell-${index}`} fill={entry.totalPnl >= 0 ? '#10b981' : '#f43f5e'} />
                       ))}
                     </Pie>
                     <Tooltip
@@ -386,14 +409,19 @@ export default function AnalyticsPage() {
                         borderRadius: '8px',
                         color: 'var(--color-foreground)',
                       }}
-                      cursor={{ fill: 'var(--color-muted)', opacity: 0.2 }}
-                      formatter={(value) => [`${value}%`, 'Win Rate']}
+                      labelStyle={{ color: 'var(--color-foreground)' }}
+                      itemStyle={{ color: 'var(--color-muted-foreground)' }}
+                      cursor={{ fill: 'var(--color-border)', opacity: 0.2 }}
+                      formatter={(value) => [`${value}%`, "Win Rate"]}
                     />
                     <Bar
                       dataKey="winRate"
-                      fill="var(--color-indigo-500)"
                       radius={[4, 4, 0, 0]}
-                    />
+                    >
+                      {data.winRateByDay.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.winRate >= 50 ? '#10b981' : '#f43f5e'} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>

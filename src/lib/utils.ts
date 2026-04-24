@@ -29,8 +29,8 @@ export function formatPrice(price: number, currency = 'USD'): string {
 
 // Get PnL color class based on value
 export function getPnLColor(pnl: number): string {
-  if (pnl > 0) return 'text-emerald-400';
-  if (pnl < 0) return 'text-rose-400';
+  if (pnl > 0) return 'text-emerald-500';
+  if (pnl < 0) return 'text-rose-500';
   return 'text-slate-400';
 }
 
