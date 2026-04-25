@@ -165,7 +165,7 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
                 onValueChange={(value) => handleInputChange('direction', value as 'long' | 'short')}
                 disabled={isLoading}
               >
-                <SelectTrigger className="bg-input border-border text-foreground">
+                <SelectTrigger className="bg-input border-border text-foreground capitalize">
                   <SelectValue placeholder="Select direction" />
                 </SelectTrigger>
                 <SelectContent className="bg-card border-border">

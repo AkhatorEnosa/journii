@@ -159,7 +159,7 @@ export default function AnalyticsPage() {
         Back
       </Button>
       {/* Header */}
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="py-4 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div>
@@ -370,7 +370,7 @@ export default function AnalyticsPage() {
                       label={({ name, percent }) => name ? `${name}: ${Math.round((percent || 0) * 100)}%` : ''}
                     >
                       {data.directionPerformance.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.totalPnl >= 0 ? '#10b981' : '#f43f5e'} />
+                        <Cell key={`cell-${index}`} fill={entry.direction.toLowerCase() === 'long' ? '#10b981' : '#f43f5e'} />
                       ))}
                     </Pie>
                     <Tooltip
