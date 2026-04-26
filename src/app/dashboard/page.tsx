@@ -237,11 +237,11 @@ export default function DashboardPage() {
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
-                    <Badge variant="secondary" className="bg-emerald-400/10 text-emerald-400 border-emerald-500/20">
+                    <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
                       <TrendingUp className="w-3 h-3 mr-1" />
                       Profit
                     </Badge>
-                    <Badge variant="secondary" className="bg-destructive/10 text-destructive border-destructive/20">
+                    <Badge variant="secondary" className="bg-rose-500/10 text-rose-500 border-rose-500/20">
                       <TrendingDown className="w-3 h-3 mr-1" />
                       Loss
                     </Badge>
@@ -304,22 +304,21 @@ export default function DashboardPage() {
                         return (
                           <div
                             key={index}
-                            className={`min-h-16 p-1 border border-border rounded-sm cursor-pointer transition-colors hover:bg-accent 
-                            ${!isCurrentMonth ? 'opacity-50' : ''} 
-                            ${isToday && !dailyTotal ? 'ring-2 ring-primary' : ''}
-                            ${dailyTotal ? `${getPnLBgColor(dailyTotal.totalPnl)} ${getPnLBorderColor(dailyTotal.totalPnl)}` : ''}
-                            ${isToday && dailyTotal ? `${getPnLBgColor(dailyTotal.totalPnl)} border-2 ${getPnLBorderColor(dailyTotal.totalPnl)}` : ''}
+                            className={`min-h-20 p-2 border border-border bg-black rounded-sm cursor-pointer transition-colors hover:bg-accent 
+                              ${!isCurrentMonth ? 'opacity-50' : ''} 
+                              ${isToday && !dailyTotal ? 'ring-2 ring-primary' : ''}
+                              ${dailyTotal ? `${getPnLBgColor(dailyTotal.totalPnl)} ${getPnLBorderColor(dailyTotal.totalPnl)}` : ''}
                             `}
                             onClick={() => handleDateClick(day)}
                           >
-                            <div className={`text-sm ${
+                            <div className={`text-right text-xs ${
                               isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'
                             } ${isWeekend ? 'font-medium' : ''}`}>
                               {day.getDate()}
                             </div>
                             {dailyTotal && (
-                              <div className="mt-1 space-y-1">
-                                <div className={`text-xs font-semibold ${getPnLColor(dailyTotal.totalPnl)}`}>
+                              <div className="text-center space-y-1">
+                                <div className={`text-xs font-bold ${getPnLColor(dailyTotal.totalPnl)}`}>
                                   {formatPnL(dailyTotal.totalPnl)}
                                 </div>
                                 <div className="text-xs text-muted-foreground">
@@ -335,11 +334,11 @@ export default function DashboardPage() {
                     {/* Legend */}
                     <div className="flex gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-emerald-400/20 border border-emerald-500/40 rounded" />
+                        <div className="w-3 h-3 bg-emerald-500/20 border border-emerald-500/40 rounded" />
                         <span>Profit Day</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-destructive/20 border border-destructive/40 rounded" />
+                        <div className="w-3 h-3 bg-rose-500/20 border border-rose-500/40 rounded" />
                         <span>Loss Day</span>
                       </div>
                       <div className="flex items-center gap-2">

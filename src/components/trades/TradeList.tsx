@@ -12,6 +12,7 @@ import { useUser } from '@clerk/nextjs';
 import { useQueryClient } from '@tanstack/react-query';
 import { Calendar, Edit, Trash2, AlertCircle, Tag } from 'lucide-react';
 import TradeModal from './TradeModal';
+import TradeDetailsModal from './TradeDetailsModal';
 import { tradeKeys } from '@/lib/hooks/useTrades';
 
 interface TradeListProps {
@@ -26,6 +27,8 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
   const [internalOpen, setInternalOpen] = useState(false);
   const [editingTrade, setEditingTrade] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [viewingTrade, setViewingTrade] = useState<any>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -80,9 +83,15 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
     }
   };
 
-  const handleEditTrade = (trade: any) => {
+  const handleEditTrade = (trade: any, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setEditingTrade(trade);
     setIsEditModalOpen(true);
+  };
+
+  const handleViewTrade = (trade: any) => {
+    setViewingTrade(trade);
+    setIsViewModalOpen(true);
   };
 
   const handleEditSubmit = async (updatedTrade: any) => {
@@ -148,8 +157,8 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
 
           {/* Future Date Warning */}
           {selectedDate && isFutureDate(selectedDate) && (
-            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-              <div className="flex items-center gap-2 text-destructive">
+            <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg">
+              <div className="flex items-center gap-2 text-rose-500">
                 <AlertCircle className="w-4 h-4" />
                 <span className="text-sm font-medium">Cannot add trades for future dates</span>
               </div>
@@ -181,7 +190,11 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
                   </TableHeader>
                   <TableBody>
                     {trades.map((trade) => (
-                      <TableRow key={trade.id} className="border-border hover:bg-accent/50">
+                      <TableRow 
+                        key={trade.id} 
+                        className="border-border hover:bg-accent/50 cursor-pointer"
+                        onClick={() => handleViewTrade(trade)}
+                      >
                         <TableCell className="font-medium text-foreground">
                           {trade.symbol}
                         </TableCell>
@@ -234,15 +247,21 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
                               variant="ghost"
                               size="sm"
                               className="text-muted-foreground hover:text-foreground hover:bg-accent"
-                              onClick={() => handleEditTrade(trade)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditTrade(trade, e);
+                              }}
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-muted-foreground hover:text-destructive hover:bg-accent"
-                              onClick={() => handleDeleteTrade(trade.id)}
+                              className="text-muted-foreground hover:text-rose-500 hover:bg-accent"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteTrade(trade.id);
+                              }}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -268,6 +287,16 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
         onSubmit={handleEditSubmit}
         isLoading={isLoading}
         trade={editingTrade}
+      />
+
+      {/* View Trade Details Modal */}
+      <TradeDetailsModal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setViewingTrade(null);
+        }}
+        trade={viewingTrade}
       />
     </div>
   );

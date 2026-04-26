@@ -87,6 +87,23 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
 
     if (!formData.pnl && formData.pnl !== 0) {
       newErrors.pnl = 'PnL is required';
+    } else {
+      // Validate PnL sign based on direction and price comparison
+      const { direction, entryPrice, exitPrice, pnl } = formData;
+      
+      if (direction === 'long') {
+        if (exitPrice < entryPrice && pnl >= 0) {
+          newErrors.pnl = 'PnL must be negative when exit price is lower than entry price for long trades';
+        } else if (exitPrice > entryPrice && pnl <= 0) {
+          newErrors.pnl = 'PnL must be positive when exit price is higher than entry price for long trades';
+        }
+      } else if (direction === 'short') {
+        if (exitPrice > entryPrice && pnl >= 0) {
+          newErrors.pnl = 'PnL must be negative when exit price is higher than entry price for short trades';
+        } else if (exitPrice < entryPrice && pnl <= 0) {
+          newErrors.pnl = 'PnL must be positive when exit price is lower than entry price for short trades';
+        }
+      }
     }
 
     if (!formData.date) {

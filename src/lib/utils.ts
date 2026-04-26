@@ -36,8 +36,8 @@ export function getPnLColor(pnl: number): string {
 
 // Get PnL background color class (subtle)
 export function getPnLBgColor(pnl: number): string {
-  if (pnl > 0) return 'bg-emerald-500/10';
-  if (pnl < 0) return 'bg-rose-500/10';
+  if (pnl > 0) return 'bg-emerald-500/10 hover:bg-emerald-500/10';
+  if (pnl < 0) return 'bg-rose-500/10 hover:bg-rose-500/10';
   return 'bg-slate-500/10';
 }
 
