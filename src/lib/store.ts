@@ -64,6 +64,7 @@ class SupabaseTradeService implements ITradeService {
       exit_price: tradeData.exitPrice,
       pnl: tradeData.pnl,
       direction: tradeData.direction,
+      result: tradeData.result,
       notes: tradeData.notes,
       tags: tradeData.tags,
       date: tradeData.date,
@@ -93,6 +94,7 @@ class SupabaseTradeService implements ITradeService {
     if (updates.exitPrice !== undefined) updateData.exit_price = updates.exitPrice;
     if (updates.pnl !== undefined) updateData.pnl = updates.pnl;
     if (updates.direction !== undefined) updateData.direction = updates.direction;
+    if (updates.result !== undefined) updateData.result = updates.result;
     if (updates.notes !== undefined) updateData.notes = updates.notes;
     if (updates.tags !== undefined) updateData.tags = updates.tags;
     if (updates.date !== undefined) updateData.date = updates.date;
@@ -190,6 +192,7 @@ class SupabaseTradeService implements ITradeService {
       direction: supabaseTrade.direction as 'long' | 'short',
       notes: supabaseTrade.notes || '',
       tags: tags,
+      result: supabaseTrade.result ?? null,
       date: supabaseTrade.date,
       createdAt: supabaseTrade.created_at,
       updatedAt: supabaseTrade.updated_at,

@@ -206,6 +206,7 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
                     <TableRow className="bg-muted/20 hover:bg-muted/20">
                       <TableHead className="text-foreground">Symbol</TableHead>
                       <TableHead className="text-foreground">PnL</TableHead>
+                      <TableHead className="text-foreground">Result</TableHead>
                       <TableHead className="text-foreground">Direction</TableHead>
                       <TableHead className="text-foreground">Date</TableHead>
                       <TableHead className="text-foreground">Tags</TableHead>
@@ -226,6 +227,22 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
                           <span className={`font-semibold ${getPnLColor(trade.pnl)}`}>
                             {formatPnL(trade.pnl)}
                           </span>
+                        </TableCell>
+                        <TableCell>
+                          {trade.result ? (
+                            <Badge 
+                              variant="secondary" 
+                              className={`text-xs ${
+                                trade.result === 'profit'
+                                  ? 'bg-emerald-400/10 text-emerald-400 border-emerald-500/20' 
+                                  : 'bg-rose-500/10 text-rose-500 border-rose-500/20'
+                              }`}
+                            >
+                              {trade.result.toUpperCase()}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Badge 
