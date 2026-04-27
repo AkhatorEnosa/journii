@@ -20,7 +20,7 @@ A beautiful, powerful trade journal built with Next.js, TypeScript, and shadcn/u
 
 ### 🛡️ **Secure & Private**
 - Local storage for data privacy
-- Optional Supabase integration for cloud sync
+- Supabase integration for cloud sync
 - Authentication system with user management
 
 ### 🎨 **Beautiful UI**
