@@ -4,13 +4,9 @@ A beautiful, powerful trade journal built with Next.js, TypeScript, and shadcn/u
 
 ## Features
 
-### 📊 **Calendar View**
-- Visualize your trades on an interactive calendar
-- Color-coded PnL indicators (green for profit, red for loss)
-- Click on any day to add new trades
-
 ### 📈 **Performance Analytics**
 - Real-time PnL tracking and calculations
+- Cumulative PnL visualization over time
 - Win rate analysis by day of week
 - Symbol performance tracking
 - Direction performance (Long vs Short)
@@ -28,21 +24,23 @@ A beautiful, powerful trade journal built with Next.js, TypeScript, and shadcn/u
 - Authentication system with user management
 
 ### 🎨 **Beautiful UI**
-- Dark theme with modern design
+- Light/Dark theme toggle
+- Modern design with smooth transitions
 - Built with shadcn/ui components
 - Fully responsive design
 - Accessible and keyboard-friendly
 
 ## Tech Stack
 
-- **Next.js 14** - React framework with App Router
+- **Next.js 16** - React framework with App Router
 - **TypeScript** - Type-safe development
 - **Tailwind CSS** - Utility-first CSS framework
-- **shadcn/ui** - Beautiful, accessible UI components
+- **shadcn/ui** - Beautiful, accessible UI components (built on Base UI)
 - **Recharts** - Interactive data visualization
-- **FullCalendar** - Calendar component
 - **Lucide React** - Icon library
-- **Supabase** - Optional backend (PostgreSQL + Auth)
+- **Supabase** - Optional backend (PostgreSQL)
+- **Clerk** - Authentication system
+- **next-themes** - Theme switching (light/dark mode)
 
 ## Installation
 
@@ -79,43 +77,41 @@ npm run dev
 src/
 ├── app/                    # Next.js App Router pages
 │   ├── page.tsx           # Landing page
-│   ├── login/             # Authentication pages
-│   ├── signup/
-│   ├── dashboard/         # Main dashboard with calendar
-│   └── analytics/         # Performance analytics
+│   ├── dashboard/         # Main dashboard with trade list
+│   └── analytics/         # Performance analytics with charts
 ├── components/            # React components
 │   ├── ui/               # shadcn/ui components
-│   ├── auth/             # Authentication components
 │   └── trades/           # Trade-related components
 ├── lib/                  # Utilities and services
 │   ├── types.ts          # TypeScript interfaces
 │   ├── utils.ts          # Utility functions
 │   ├── store.ts          # State management
 │   └── supabase/         # Supabase configuration
-└── middleware.ts         # Next.js middleware
+└── sections/             # Page section components
 ```
 
 ## Key Components
 
 ### Dashboard (`/dashboard`)
-- Interactive calendar view
-- Daily PnL visualization
-- Quick trade addition
-- Summary statistics
+- Trade list with summary statistics
+- Quick trade management
+- Daily PnL overview
 
 ### Analytics (`/analytics`)
 - Performance charts and graphs
+- Cumulative PnL trend line
 - Win rate analysis
 - Symbol performance tracking
-- Direction analysis
+- Direction analysis (Long vs Short pie chart)
+- Top traded symbols
 
 ### Trade Modal
 - Form for adding/editing trades
-- Real-time PnL calculation preview
+- Real-time validation
 - Tag management
-- Validation and error handling
+- Error handling
 
-### Trade List (Sidebar)
+### Trade List
 - Detailed trade listing
 - Sortable table with PnL, direction, date
 - Edit and delete functionality
@@ -148,7 +144,7 @@ interface Trade {
 1. **Create Components**: Use shadcn/ui for consistent styling
 2. **Type Safety**: Always define TypeScript interfaces
 3. **State Management**: Use the existing trade service pattern
-4. **Styling**: Follow the dark theme color scheme
+4. **Styling**: Follow the theme color scheme (supports light/dark)
 5. **Accessibility**: Ensure all interactive elements are accessible
 
 ### Running Tests
@@ -183,30 +179,10 @@ For support and questions:
 - Check the documentation
 - Review the code examples
 
-<!-- ## Future Roadmap
-
-- [ ] Mobile app version
-- [ ] Advanced analytics and machine learning insights
-- [ ] Trade import/export functionality
-- [ ] Multi-currency support
-- [ ] Team/collaboration features
-- [ ] Advanced charting and technical indicators
-- [ ] Trading journal templates
-- [ ] Performance benchmarks and goals
-
-## Screenshots -->
-
 ## Screenshots
 
-Dashboard![dashboard](https://ik.imagekit.io/btlflc5goc/tradrjourney/tradrjourney.png?updatedAt=1777030242968)
+Dashboard
+![dashboard](https://ik.imagekit.io/btlflc5goc/tradrjourney/tradrjourney.png?updatedAt=1777030242968)
 
-Analytics![analytics](https://ik.imagekit.io/btlflc5goc/tradrjourney/Screenshot%202026-04-27%20at%2011.01.48.png)
-
-
-<!-- ## Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details. -->
-<!-- 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. -->
+Analytics
+![analytics](https://ik.imagekit.io/btlflc5goc/tradrjourney/Screenshot%202026-04-27%20at%2011.01.48.png)
