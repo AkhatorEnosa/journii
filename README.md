@@ -38,7 +38,7 @@ A beautiful, powerful trade journal built with Next.js, TypeScript, and shadcn/u
 - **shadcn/ui** - Beautiful, accessible UI components (built on Base UI)
 - **Recharts** - Interactive data visualization
 - **Lucide React** - Icon library
-- **Supabase** - Optional backend (PostgreSQL)
+- **Supabase** - Backend (PostgreSQL)
 - **Clerk** - Authentication system
 - **next-themes** - Theme switching (light/dark mode)
 
