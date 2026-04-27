@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import Features from './sections/Features';
 import { Hero } from './sections/Hero';
+import Footer from './sections/Footer';
 
 const stats = [
   { value: '10K+', label: 'Active Traders' },
@@ -242,6 +243,7 @@ export default function Home() {
           </div>
         </section> */}
       </main>
+      <Footer />
     </div>
   );
 }

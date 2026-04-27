@@ -7,6 +7,7 @@ export interface Trade {
   exitPrice: number;
   pnl: number; // Manual PnL - source of truth, not calculated
   direction: 'long' | 'short';
+  result: 'profit' | 'loss';
   notes: string;
   tags: string[];
   date: string; // ISO date string (YYYY-MM-DD)
@@ -29,6 +30,7 @@ export interface TradeFormData {
   exitPrice: number;
   pnl: number;
   direction: 'long' | 'short';
+  result: 'profit' | 'loss';
   notes: string;
   tags: string[];
   date: string;

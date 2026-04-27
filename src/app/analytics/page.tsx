@@ -4,15 +4,15 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, Target, Calendar } from 'lucide-react';
+import { ArrowLeft, TrendingUp, DollarSign, Target, Calendar } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useUser } from '@clerk/nextjs';
 import { formatPnL, getPnLColor, formatPrice } from '@/lib/utils';
 import { tradeService } from '@/lib/store';
 import Header from '../sections/Header';
+import Footer from '../sections/Footer';
 
-// const COLORS = ['#10b981', '#f43f5e', '#6366f1', '#f59e0b', '#8b5cf6', '#ec4899'];
+// const COLORS = ['var(--color-positive)', 'var(--color-negative)', '#6366f1', '#f59e0b', '#8b5cf6', '#ec4899'];
 
 export default function AnalyticsPage() {
   const router = useRouter();
@@ -21,6 +21,7 @@ export default function AnalyticsPage() {
   const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d'>('30d');
   const [data, setData] = useState({
     dailyPnL: [] as { date: string; pnl: number }[],
+    cumulativePnL: [] as { date: string; cumulative: number }[],
     symbolPerformance: [] as { symbol: string; totalPnl: number; count: number }[],
     directionPerformance: [] as { direction: string; totalPnl: number; count: number; wins: number; winRate: number }[],
     winRateByDay: [] as { day: string; winRate: number }[],
@@ -62,12 +63,27 @@ export default function AnalyticsPage() {
         dailyPnLMap.set(date, dailyPnLMap.get(date) + trade.pnl);
       });
 
-      const dailyPnL = Array.from(dailyPnLMap.entries())
+      const dailyPnLUnsorted = Array.from(dailyPnLMap.entries())
         .map(([date, pnl]) => ({
-          date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          date,
           pnl: Math.round(pnl * 100) / 100,
         }))
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      const dailyPnL = dailyPnLUnsorted.map(d => ({
+        date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        pnl: d.pnl,
+      }));
+
+      // Cumulative PnL (running total)
+      let runningTotal = 0;
+      const cumulativePnL = dailyPnLUnsorted.map((d, index) => {
+        runningTotal += d.pnl;
+        return {
+          date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          cumulative: Math.round(runningTotal * 100) / 100,
+        };
+      });
 
       // Symbol Performance
       const symbolMap = new Map();
@@ -126,6 +142,7 @@ export default function AnalyticsPage() {
 
       setData({
         dailyPnL,
+        cumulativePnL,
         symbolPerformance,
         directionPerformance,
         winRateByDay,
@@ -154,10 +171,12 @@ export default function AnalyticsPage() {
         </div>
       }
       <Header />
-      <Button variant="ghost" onClick={() => router.push('/dashboard')} className="py-8 mt-10 text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        Back
-      </Button>
+      <div className='container mx-auto px-4'>
+        <Button variant="ghost" onClick={() => router.push('/dashboard')} className="py-8 mt-10 text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </Button>
+      </div>
       {/* Header */}
       <header className="py-4 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -280,13 +299,13 @@ export default function AnalyticsPage() {
                       formatter={(value) => [formatPnL(Number(value) || 0), 'PnL']}
                     />
                     <Line
-                      type="monotone"
+                      type="bump"
                       dataKey="pnl"
-                      stroke={totalPnL >= 0 ? '#10b981' : '#f43f5e'}
+                      stroke={totalPnL >= 0 ? 'var(--color-positive)' : 'var(--color-negative)'}
                       strokeWidth={2}
                       dot={(props) => {
                         const { cx, cy, payload } = props;
-                        const color = payload.pnl >= 0 ? '#10b981' : '#f43f5e';
+                        const color = payload.pnl >= 0 ? 'var(--color-positive)' : 'var(--color-negative)';
                         return (
                           <circle
                             cx={cx}
@@ -319,24 +338,44 @@ export default function AnalyticsPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data.symbolPerformance.slice(0, 8)}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                    <XAxis dataKey="symbol" stroke="var(--color-muted-foreground)" fontSize={12} />
+                    <XAxis dataKey="symbol" stroke="var(--color-muted-foreground)" fontSize={12} style={{ textTransform: 'uppercase' }} />
                     <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'var(--color-card)',
-                        border: '1px solid var(--color-border)',
-                        borderRadius: '8px',
-                        color: 'var(--color-foreground)',
-                      }}
-                      cursor={{ fill: 'var(--color-muted)', opacity: 0.2 }}
-                      formatter={(value) => [formatPnL(Number(value) || 0), 'PnL']}
-                    />
+                    contentStyle={{
+                      backgroundColor: 'var(--color-card)',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: '8px',
+                      color: 'var(--color-foreground)',
+                    }}
+                    itemStyle={{ 
+                      display: 'flex', 
+                      gap: '4px',           // Controls the space between "PnL" and the value
+                      textAlign: 'left', 
+                      justifyContent: 'flex-start',
+                      flexDirection: 'row-reverse' // This moves the Value to the left of the Name
+                    }}
+                    labelClassName="uppercase"
+                    // Keep the label color neutral
+                    labelStyle={{ color: 'var(--color-muted-foreground)' }} 
+                    cursor={{ fill: 'var(--color-muted)', opacity: 0.2 }}
+                    
+                    // Use the formatter to dynamically color the specific value being hovered
+                    formatter={(value) => {
+                      const pnlValue = Number(value) || 0;
+                      const color = pnlValue > 0 ? 'var(--color-positive)' : pnlValue < 0 ? 'var(--color-negative)' : 'var(--color-foreground)';
+                      
+                      return [
+                        <span style={{ color }}>{formatPnL(pnlValue)}</span>,
+                        'PnL'
+                      ];
+                    }}
+                  />
                     <Bar
                       dataKey="totalPnl"
                       radius={[4, 4, 0, 0]}
                     >
                       {data.symbolPerformance.slice(0, 8).map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.totalPnl >= 0 ? '#10b981' : '#f43f5e'} />
+                        <Cell key={`cell-${index}`} fill={entry.totalPnl >= 0 ? 'var(--color-positive)' : 'var(--color-negative)'} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -345,6 +384,44 @@ export default function AnalyticsPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Total PnL Chart (Full Width) */}
+        <Card className="bg-card border-border mb-8">
+          <CardHeader>
+            <CardTitle className="text-foreground">Total PnL</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Cumulative profit and loss over time
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data.cumulativePnL}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                  <XAxis dataKey="date" stroke="var(--color-muted-foreground)" fontSize={12} />
+                  <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'var(--color-card)',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: '8px',
+                      color: 'var(--color-foreground)',
+                    }}
+                    formatter={(value) => [formatPnL(Number(value) || 0), 'Total PnL']}
+                  />
+                  <Line
+                    type="bump"
+                    dataKey="cumulative"
+                    stroke={totalPnL >= 0 ? 'var(--color-positive)' : 'var(--color-negative)'}
+                    strokeWidth={3}
+                    dot={false}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Bottom Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -367,10 +444,14 @@ export default function AnalyticsPage() {
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
+                      stroke='none'
+                      style={{
+                        textTransform: 'capitalize'
+                      }}
                       label={({ name, percent }) => name ? `${name}: ${Math.round((percent || 0) * 100)}%` : ''}
                     >
                       {data.directionPerformance.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.direction.toLowerCase() === 'long' ? '#10b981' : '#f43f5e'} />
+                        <Cell key={`cell-${index}`} fill={entry.direction.toLowerCase() === 'long' ? 'var(--color-positive)' : 'var(--color-negative)'} />
                       ))}
                     </Pie>
                     <Tooltip
@@ -419,7 +500,7 @@ export default function AnalyticsPage() {
                       radius={[4, 4, 0, 0]}
                     >
                       {data.winRateByDay.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.winRate >= 50 ? '#10b981' : '#f43f5e'} />
+                        <Cell key={`cell-${index}`} fill={entry.winRate >= 50 ? 'var(--color-positive)' : 'var(--color-negative)'} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -461,6 +542,7 @@ export default function AnalyticsPage() {
           </Card>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

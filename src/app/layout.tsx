@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { shadcn } from '@clerk/ui/themes'
 import QueryProvider from "@/components/providers/QueryProvider";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import Footer from "./sections/Footer";
 import Header from "./sections/Header";
 
@@ -28,22 +29,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${montserrat.variable} h-full antialiased dark`}>
+    <html lang="en" className={`${montserrat.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
-        <ClerkProvider
-          appearance={{
-            theme: shadcn
-          }}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
         >
-          <QueryProvider>
-            <TooltipProvider>
-              <main className="flex-1 bg-background">
-                {children}
-              </main>
-              <Footer />
-            </TooltipProvider>
-          </QueryProvider>
-        </ClerkProvider>
+          <ClerkProvider
+            appearance={{
+              theme: shadcn
+            }}
+          >
+            <QueryProvider>
+              <TooltipProvider>
+                <main className="flex-1 bg-background">
+                  {children}
+                </main>
+              </TooltipProvider>
+            </QueryProvider>
+          </ClerkProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

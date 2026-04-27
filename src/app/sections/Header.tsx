@@ -6,6 +6,7 @@ import { TrendingUp, Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -40,6 +41,7 @@ const Header = () => {
           <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
             Pricing
           </Link>
+          <ThemeToggle />
           <Show when="signed-out">
             <SignInButton mode="modal">
               <button className="text-muted-foreground hover:text-foreground transition-colors">
@@ -97,6 +99,7 @@ const Header = () => {
                 {/* Header with close button */}
                 <div className="flex items-center justify-between p-4 border-b border-border">
                   <span className="text-lg font-bold text-foreground">Menu</span>
+                  <ThemeToggle />
                 </div>
 
                 {/* Navigation links */}

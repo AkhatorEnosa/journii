@@ -183,7 +183,7 @@ For support and questions:
 - Check the documentation
 - Review the code examples
 
-## Future Roadmap
+<!-- ## Future Roadmap
 
 - [ ] Mobile app version
 - [ ] Advanced analytics and machine learning insights
@@ -194,14 +194,19 @@ For support and questions:
 - [ ] Trading journal templates
 - [ ] Performance benchmarks and goals
 
+## Screenshots -->
+
 ## Screenshots
 
-*(Add screenshots here when available)*
+Dashboard![dashboard](https://ik.imagekit.io/btlflc5goc/tradrjourney/tradrjourney.png?updatedAt=1777030242968)
 
-## Contributing
+Analytics![analytics](https://ik.imagekit.io/btlflc5goc/tradrjourney/Screenshot%202026-04-27%20at%2011.01.48.png)
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
+<!-- ## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details. -->
+<!-- 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. -->

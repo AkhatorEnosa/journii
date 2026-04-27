@@ -26,6 +26,7 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
     exitPrice: trade?.exitPrice || 0,
     pnl: trade?.pnl || 0,
     direction: trade?.direction || 'long',
+    result: trade?.pnl !== undefined && trade.pnl < 0 ? 'loss' : 'profit',
     notes: trade?.notes || '',
     tags: trade?.tags || [],
     date: trade?.date || new Date().toISOString().split('T')[0],
@@ -42,6 +43,7 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
         exitPrice: trade.exitPrice || 0,
         pnl: trade.pnl || 0,
         direction: trade.direction || 'long',
+        result: trade.result || (trade.pnl !== undefined && trade.pnl < 0 ? 'loss' : 'profit'),
         notes: trade.notes || '',
         tags: trade.tags || [],
         date: trade.date || new Date().toISOString().split('T')[0],
@@ -54,6 +56,7 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
         exitPrice: 0,
         pnl: 0,
         direction: 'long',
+        result: 'profit',
         notes: '',
         tags: [],
         date: new Date().toISOString().split('T')[0],
@@ -88,21 +91,13 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
     if (!formData.pnl && formData.pnl !== 0) {
       newErrors.pnl = 'PnL is required';
     } else {
-      // Validate PnL sign based on direction and price comparison
-      const { direction, entryPrice, exitPrice, pnl } = formData;
+      // Validate PnL sign based on selected result
+      const { result, pnl } = formData;
       
-      if (direction === 'long') {
-        if (exitPrice < entryPrice && pnl >= 0) {
-          newErrors.pnl = 'PnL must be negative when exit price is lower than entry price for long trades';
-        } else if (exitPrice > entryPrice && pnl <= 0) {
-          newErrors.pnl = 'PnL must be positive when exit price is higher than entry price for long trades';
-        }
-      } else if (direction === 'short') {
-        if (exitPrice > entryPrice && pnl >= 0) {
-          newErrors.pnl = 'PnL must be negative when exit price is higher than entry price for short trades';
-        } else if (exitPrice < entryPrice && pnl <= 0) {
-          newErrors.pnl = 'PnL must be positive when exit price is lower than entry price for short trades';
-        }
+      if (result === 'profit' && pnl <= 0) {
+        newErrors.pnl = 'PnL must be positive for profit trades';
+      } else if (result === 'loss' && pnl >= 0) {
+        newErrors.pnl = 'PnL must be negative for loss trades';
       }
     }
 
@@ -157,17 +152,17 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="symbol" className="text-foreground">
                 Symbol
               </Label>
               <Input
                 id="symbol"
-                placeholder="e.g., AAPL, BTC-USD"
+                placeholder="e.g., XAUUSD, BTCUSD"
                 value={formData.symbol}
                 onChange={(e) => handleInputChange('symbol', e.target.value)}
-                className="bg-input border-border text-foreground"
+                className="bg-input border-border text-foreground uppercase"
                 disabled={isLoading}
               />
               {errors.symbol && <p className="text-sm text-destructive">{errors.symbol}</p>}
@@ -182,12 +177,31 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
                 onValueChange={(value) => handleInputChange('direction', value as 'long' | 'short')}
                 disabled={isLoading}
               >
-                <SelectTrigger className="bg-input border-border text-foreground capitalize">
+                <SelectTrigger className="bg-input border-border text-foreground capitalize w-full">
                   <SelectValue placeholder="Select direction" />
                 </SelectTrigger>
                 <SelectContent className="bg-card border-border">
                   <SelectItem value="long">Long</SelectItem>
                   <SelectItem value="short">Short</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="result" className="text-foreground">
+                Result
+              </Label>
+              <Select
+                value={formData.result}
+                onValueChange={(value) => handleInputChange('result', value as 'profit' | 'loss')}
+                disabled={isLoading}
+              >
+                <SelectTrigger className="bg-input border-border text-foreground capitalize w-full">
+                  <SelectValue placeholder="Select result" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  <SelectItem value="profit" className="bg-emerald-500/10">Profit</SelectItem>
+                  <SelectItem value="loss" className="bg-rose-500/10">Loss</SelectItem>
                 </SelectContent>
               </Select>
             </div>

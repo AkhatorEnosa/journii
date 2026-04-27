@@ -6,6 +6,16 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { formatPnL, getPnLColor, formatDate } from '@/lib/utils';
 import { tradeService } from '@/lib/store';
 import { useUser } from '@clerk/nextjs';
@@ -29,6 +39,8 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [viewingTrade, setViewingTrade] = useState<any>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [deleteTradeId, setDeleteTradeId] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -70,17 +82,29 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
     }
   };
 
-  const handleDeleteTrade = async (tradeId: string) => {
-    if (!user) return;
+  const handleDeleteTrade = (tradeId: string) => {
+    setDeleteTradeId(tradeId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteTrade = async () => {
+    if (!user || !deleteTradeId) return;
     
     try {
-      await tradeService.deleteTrade(user.id, tradeId);
+      await tradeService.deleteTrade(user.id, deleteTradeId);
       // Invalidate queries to refetch data
       queryClient.invalidateQueries({ queryKey: tradeKeys.all });
       await loadTrades();
+      setIsDeleteDialogOpen(false);
+      setDeleteTradeId(null);
     } catch (err) {
       console.error('Failed to delete trade:', err);
     }
+  };
+
+  const cancelDeleteTrade = () => {
+    setIsDeleteDialogOpen(false);
+    setDeleteTradeId(null);
   };
 
   const handleEditTrade = (trade: any, e?: React.MouseEvent) => {
@@ -195,7 +219,7 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
                         className="border-border hover:bg-accent/50 cursor-pointer"
                         onClick={() => handleViewTrade(trade)}
                       >
-                        <TableCell className="font-medium text-foreground">
+                        <TableCell className="font-medium text-foreground uppercase">
                           {trade.symbol}
                         </TableCell>
                         <TableCell>
@@ -298,6 +322,29 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
         }}
         trade={viewingTrade}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-foreground">Delete Trade</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              Are you sure you want to delete this trade? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="text-muted-foreground hover:text-foreground" onClick={cancelDeleteTrade}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-rose-500 hover:bg-rose-600"
+              onClick={confirmDeleteTrade}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

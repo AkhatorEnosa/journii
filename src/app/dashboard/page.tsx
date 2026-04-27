@@ -12,6 +12,7 @@ import { useDailyTotals, useCreateTrade, useUpdateTrade, useDeleteTrade } from '
 import TradeModal from '@/components/trades/TradeModal';
 import TradeList from '@/components/trades/TradeList';
 import Header from '../sections/Header';
+import Footer from '../sections/Footer';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -304,7 +305,7 @@ export default function DashboardPage() {
                         return (
                           <div
                             key={index}
-                            className={`min-h-20 p-2 border border-border bg-black rounded-sm cursor-pointer transition-colors hover:bg-accent 
+                            className={`min-h-20 p-2 border border-border rounded-sm cursor-pointer transition-colors hover:bg-accent 
                               ${!isCurrentMonth ? 'opacity-50' : ''} 
                               ${isToday && !dailyTotal ? 'ring-2 ring-primary' : ''}
                               ${dailyTotal ? `${getPnLBgColor(dailyTotal.totalPnl)} ${getPnLBorderColor(dailyTotal.totalPnl)}` : ''}
@@ -398,6 +399,7 @@ export default function DashboardPage() {
         isLoading={createTradeMutation.isPending}
         trade={selectedDate ? { date: selectedDate } as any : undefined}
       />
+      <Footer />
     </div>
   );
 }
