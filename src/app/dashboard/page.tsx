@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ export default function DashboardPage() {
   const [isTradeListOpen, setIsTradeListOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  // React Query hooks
+  // React Query hooks - MUST be called unconditionally at the top
   const { data: dailyTotals = [], isLoading: isLoadingTotals } = useDailyTotals(
     user?.id || '',
     currentMonth.getFullYear(),
@@ -137,11 +137,24 @@ export default function DashboardPage() {
     setCurrentMonth(new Date());
   };
 
-  if (isLoaded && !isSignedIn) {
-    return null;
+  // Redirect to home page if not authenticated
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push('/');
+    }
+  }, [isLoaded, isSignedIn, router]);
+
+  // Show loading state while checking authentication
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
-  if (!user) {
+  // Return null if not signed in (will redirect via useEffect)
+  if (!isSignedIn) {
     return null;
   }
 

@@ -1,20 +1,10 @@
 'use client';
 
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Show, SignUpButton } from '@clerk/nextjs';
 import { 
   TrendingUp, 
-  Shield, 
-  Zap, 
-  Calendar, 
   BarChart3, 
-  Target, 
-  Users, 
-  Award,
-  ArrowRight,
-  CheckCircle2,
+  Target,
   MessageSquare,
   Clock
 } from 'lucide-react';
@@ -84,7 +74,6 @@ const faqs = [
   },
   {
     question: 'Do you offer a free trial?',
-    // answer: 'Yes, we offer a 7-day free trial of our Pro plan. No credit card required. You can also get started with our free plan forever.',
     answer: 'Yes, it is free for use. No credit card required. You can also get started with our free plan forever.',
   },
 ];
@@ -207,41 +196,6 @@ export default function Home() {
             </div>
           </div>
         </section>
-
-        {/* CTA Section */}
-        {/* <section className="py-20 px-4 bg-primary text-primary-foreground">
-          <div className="container mx-auto max-w-4xl text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              Ready to Transform Your Trading?
-            </h2>
-            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-              Join thousands of traders who are already tracking, analyzing, and improving their performance with TradrJourney.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Show when="signed-out">
-                <SignUpButton mode="modal">
-                  <Button size="lg" variant="secondary" className="text-lg px-8 py-6">
-                    Start Free Trial
-                    <ArrowRight className="ml-2 w-5 h-5" />
-                  </Button>
-                </SignUpButton>
-              </Show>
-              <Show when="signed-in">
-                <Link href="/dashboard">
-                  <Button size="lg" variant="secondary" className="text-lg px-8 py-6">
-                    Go to Dashboard
-                    <ArrowRight className="ml-2 w-5 h-5" />
-                  </Button>
-                </Link>
-              </Show>
-              <Link href="#features">
-                <Button size="lg" variant="outline" className="text-lg px-8 py-6 bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary">
-                  Explore Features
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section> */}
       </main>
       <Footer />
     </div>

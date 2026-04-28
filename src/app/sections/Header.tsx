@@ -7,6 +7,7 @@ import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import Logo from '@/app/logo.png';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -27,10 +28,11 @@ const Header = () => {
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <div className="size-8 bg-primary rounded-lg flex items-center justify-center">
-            <TrendingUp className="size-6 text-primary-foreground" />
-          </div>
-          <span className="text-xl font-bold text-foreground">TradrJourney</span>
+          <img 
+            src={Logo.src} 
+            alt="TradrJourney Logo" 
+            className="w-24 h-auto transition-all duration-300 dark:invert opacity-95" 
+          />
         </Link>
 
         {/* Desktop Navigation */}

@@ -80,24 +80,6 @@ export default function TradeDetailsModal({ isOpen, onClose, trade }: TradeDetai
             </div>
           </div>
 
-          {/* Result Badge */}
-          {/* {trade.result && (
-            <div className="flex items-center gap-3">
-              <div className="text-sm text-muted-foreground">Result</div>
-              <Badge 
-                variant="secondary" 
-                className={`text-sm px-3 py-1 ${
-                  trade.result === 'profit'
-                    ? 'bg-emerald-400/10 text-emerald-400 border-emerald-500/20' 
-                    : 'bg-rose-500/10 text-rose-500 border-rose-500/20'
-                }`}
-              >
-                <Award className="w-3 h-3 mr-1" />
-                {trade.result === 'profit' ? 'Profit' : 'Loss'}
-              </Badge>
-            </div>
-          )} */}
-
           {/* Trade Details Grid */}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-muted/20 rounded-lg p-4">

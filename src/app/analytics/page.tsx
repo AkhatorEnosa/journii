@@ -28,11 +28,15 @@ export default function AnalyticsPage() {
     topSymbols: [] as { symbol: string; totalPnl: number; count: number }[],
   });
 
+  // Redirect to home page if not authenticated
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
       router.push('/');
-      return;
     }
+  }, [isLoaded, isSignedIn, router]);
+
+  // Load analytics data when authenticated
+  useEffect(() => {
     if (isLoaded && isSignedIn) {
       loadAnalyticsData();
     }
@@ -155,13 +159,24 @@ export default function AnalyticsPage() {
     }
   };
 
-  if (!user) {
-    return null;
-  }
 
   const totalPnL = data.dailyPnL.reduce((sum, d) => sum + d.pnl, 0);
   const totalTrades = data.symbolPerformance.reduce((sum, s) => sum + s.count, 0);
   const winRate = totalTrades > 0 ? Math.round((data.directionPerformance.reduce((sum, d) => sum + (d.winRate * d.count / 100), 0) / (data.directionPerformance.reduce((sum, d) => sum + d.count, 0))) * 100) : 0;
+
+  // Show loading state while checking authentication
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Return null if not signed in (will redirect via useEffect)
+  if (!isSignedIn) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background">

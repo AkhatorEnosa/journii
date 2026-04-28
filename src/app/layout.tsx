@@ -2,15 +2,10 @@ import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ClerkProvider, Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
-import { TrendingUp } from "lucide-react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { ClerkProvider } from "@clerk/nextjs";
 import { shadcn } from '@clerk/ui/themes'
 import QueryProvider from "@/components/providers/QueryProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import Footer from "./sections/Footer";
-import Header from "./sections/Header";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
