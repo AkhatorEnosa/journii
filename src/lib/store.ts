@@ -1,12 +1,13 @@
 'use client';
 
-import { Trade, TradeFormData, DailyTotal } from './types';
+import { Trade, TradeFormData, DailyTotal, Goal, GoalFormData, GoalStatus, GoalProgress } from './types';
 import { generateId } from './utils';
 import { supabase, isSupabaseConfigured } from './supabase/client';
 
 // Local storage keys
 const STORAGE_KEYS = {
   TRADES: 'journii_trades',
+  GOALS: 'journii_goals',
   USER: 'journii_user',
 };
 
@@ -319,3 +320,389 @@ export const authStorage = {
     localStorage.removeItem(STORAGE_KEYS.USER);
   },
 };
+
+// Goal service interface
+interface IGoalService {
+  getGoals(userId: string): Promise<Goal[]>;
+  getActiveGoals(userId: string): Promise<Goal[]>;
+  getGoal(userId: string, goalId: string): Promise<Goal | null>;
+  createGoal(userId: string, goal: Omit<Goal, 'id' | 'userId' | 'actualAmount' | 'createdAt' | 'updatedAt'>): Promise<Goal>;
+  updateGoal(userId: string, goalId: string, updates: Partial<GoalFormData> | Partial<Pick<Goal, 'status'>>): Promise<Goal>;
+  deleteGoal(userId: string, goalId: string): Promise<void>;
+  getGoalProgress(userId: string, goal: Goal, trades: Trade[]): GoalProgress;
+  updateGoalStatuses(userId: string): Promise<void>;
+}
+
+// Supabase goal service implementation
+class SupabaseGoalService implements IGoalService {
+  async getGoals(userId: string): Promise<Goal[]> {
+    if (!supabase) throw new Error('Supabase is not configured');
+
+    const { data, error } = await supabase
+      .from('goals')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return data.map(this.mapSupabaseGoalToGoal);
+  }
+
+  async getActiveGoals(userId: string): Promise<Goal[]> {
+    if (!supabase) throw new Error('Supabase is not configured');
+
+    const { data, error } = await supabase
+      .from('goals')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return data.map(this.mapSupabaseGoalToGoal);
+  }
+
+  async getGoal(userId: string, goalId: string): Promise<Goal | null> {
+    if (!supabase) throw new Error('Supabase is not configured');
+
+    const { data, error } = await supabase
+      .from('goals')
+      .select('*')
+      .eq('id', goalId)
+      .eq('user_id', userId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null; // Not found
+      throw error;
+    }
+
+    return this.mapSupabaseGoalToGoal(data);
+  }
+
+  async createGoal(
+    userId: string,
+    goalData: Omit<Goal, 'id' | 'userId' | 'actualAmount' | 'createdAt' | 'updatedAt'>
+  ): Promise<Goal> {
+    if (!supabase) throw new Error('Supabase is not configured');
+
+    const goalToInsert = {
+      user_id: userId,
+      title: goalData.title,
+      description: goalData.description,
+      target_amount: goalData.targetAmount,
+      start_date: goalData.startDate,
+      end_date: goalData.endDate,
+      status: goalData.status,
+      period: goalData.period,
+      actual_amount: 0,
+    };
+
+    const { data, error } = await supabase
+      .from('goals')
+      .insert([goalToInsert])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return this.mapSupabaseGoalToGoal(data);
+  }
+
+  async updateGoal(
+    userId: string,
+    goalId: string,
+    updates: Partial<GoalFormData> | Partial<Pick<Goal, 'status'>>
+  ): Promise<Goal> {
+    if (!supabase) throw new Error('Supabase is not configured');
+
+    const updateData: any = {};
+    if ('title' in updates && updates.title !== undefined) updateData.title = updates.title;
+    if ('description' in updates && updates.description !== undefined) updateData.description = updates.description;
+    if ('targetAmount' in updates && updates.targetAmount !== undefined) updateData.target_amount = updates.targetAmount;
+    if ('startDate' in updates && updates.startDate !== undefined) updateData.start_date = updates.startDate;
+    if ('endDate' in updates && updates.endDate !== undefined) updateData.end_date = updates.endDate;
+    if ('period' in updates && updates.period !== undefined) updateData.period = updates.period;
+    if ('status' in updates && updates.status !== undefined) updateData.status = updates.status;
+
+    const { data, error } = await supabase
+      .from('goals')
+      .update(updateData)
+      .eq('id', goalId)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return this.mapSupabaseGoalToGoal(data);
+  }
+
+  async deleteGoal(userId: string, goalId: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase is not configured');
+
+    const { error } = await supabase
+      .from('goals')
+      .delete()
+      .eq('id', goalId)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+  }
+
+  getGoalProgress(userId: string, goal: Goal, trades: Trade[]): GoalProgress {
+    // Filter trades within the goal's date range
+    const goalTrades = trades.filter(trade => {
+      const tradeDate = new Date(trade.date);
+      const startDate = new Date(goal.startDate);
+      const endDate = new Date(goal.endDate);
+      return tradeDate >= startDate && tradeDate <= endDate;
+    });
+
+    const currentAmount = goalTrades.reduce((sum, trade) => sum + trade.pnl, 0);
+    const percentage = goal.targetAmount !== 0 ? (currentAmount / goal.targetAmount) * 100 : 0;
+    const daysRemaining = Math.max(0, Math.ceil((new Date(goal.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)));
+    const isAchieved = currentAmount >= goal.targetAmount;
+
+    return {
+      goal,
+      currentAmount,
+      percentage: Math.min(100, Math.max(0, percentage)),
+      daysRemaining,
+      isAchieved,
+      tradeCount: goalTrades.length,
+    };
+  }
+
+  async updateGoalStatuses(userId: string): Promise<void> {
+    const goals = await this.getGoals(userId);
+    const now = new Date();
+
+    for (const goal of goals) {
+      if (goal.status === 'active') {
+        const endDate = new Date(goal.endDate);
+        if (endDate < now) {
+          // Goal period has ended, update status based on achievement
+          const trades = await new SupabaseTradeService().getTrades(userId);
+          const progress = this.getGoalProgress(userId, goal, trades);
+          const newStatus: GoalStatus = progress.isAchieved ? 'completed' : 'failed';
+          await this.updateGoal(userId, goal.id, { status: newStatus });
+        }
+      }
+    }
+  }
+
+  private mapSupabaseGoalToGoal(supabaseGoal: any): Goal {
+    return {
+      id: supabaseGoal.id,
+      userId: supabaseGoal.user_id,
+      title: supabaseGoal.title,
+      description: supabaseGoal.description || '',
+      targetAmount: Number(supabaseGoal.target_amount),
+      startDate: supabaseGoal.start_date,
+      endDate: supabaseGoal.end_date,
+      status: supabaseGoal.status as GoalStatus,
+      period: supabaseGoal.period as 'daily' | 'weekly' | 'monthly' | 'custom',
+      actualAmount: Number(supabaseGoal.actual_amount || 0),
+      createdAt: supabaseGoal.created_at,
+      updatedAt: supabaseGoal.updated_at,
+    };
+  }
+}
+
+// Local storage goal service implementation
+class LocalGoalService implements IGoalService {
+  private getStoredGoals(): Goal[] {
+    if (typeof window === 'undefined') return [];
+    const stored = localStorage.getItem(STORAGE_KEYS.GOALS);
+    return stored ? JSON.parse(stored) : [];
+  }
+
+  private saveGoals(goals: Goal[]): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(goals));
+  }
+
+  async getGoals(userId: string): Promise<Goal[]> {
+    const goals = this.getStoredGoals();
+    return goals.filter((g) => g.userId === userId);
+  }
+
+  async getActiveGoals(userId: string): Promise<Goal[]> {
+    const goals = await this.getGoals(userId);
+    return goals.filter((g) => g.status === 'active');
+  }
+
+  async getGoal(userId: string, goalId: string): Promise<Goal | null> {
+    const goals = await this.getGoals(userId);
+    return goals.find((g) => g.id === goalId) || null;
+  }
+
+  async createGoal(
+    userId: string,
+    goalData: Omit<Goal, 'id' | 'userId' | 'actualAmount' | 'createdAt' | 'updatedAt'>
+  ): Promise<Goal> {
+    const goals = this.getStoredGoals();
+    const newGoal: Goal = {
+      ...goalData,
+      id: generateId(),
+      userId,
+      actualAmount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    goals.push(newGoal);
+    this.saveGoals(goals);
+    return newGoal;
+  }
+
+  async updateGoal(
+    userId: string,
+    goalId: string,
+    updates: Partial<GoalFormData> | Partial<Pick<Goal, 'status'>>
+  ): Promise<Goal> {
+    const goals = this.getStoredGoals();
+    const index = goals.findIndex((g) => g.id === goalId && g.userId === userId);
+    if (index === -1) throw new Error('Goal not found');
+
+    goals[index] = {
+      ...goals[index],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    this.saveGoals(goals);
+    return goals[index];
+  }
+
+  async deleteGoal(userId: string, goalId: string): Promise<void> {
+    const goals = this.getStoredGoals();
+    const filtered = goals.filter((g) => !(g.id === goalId && g.userId === userId));
+    this.saveGoals(filtered);
+  }
+
+  getGoalProgress(userId: string, goal: Goal, trades: Trade[]): GoalProgress {
+    // Filter trades within the goal's date range
+    const goalTrades = trades.filter(trade => {
+      const tradeDate = new Date(trade.date);
+      const startDate = new Date(goal.startDate);
+      const endDate = new Date(goal.endDate);
+      return tradeDate >= startDate && tradeDate <= endDate;
+    });
+
+    const currentAmount = goalTrades.reduce((sum, trade) => sum + trade.pnl, 0);
+    const percentage = goal.targetAmount !== 0 ? (currentAmount / goal.targetAmount) * 100 : 0;
+    const daysRemaining = Math.max(0, Math.ceil((new Date(goal.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)));
+    const isAchieved = currentAmount >= goal.targetAmount;
+
+    return {
+      goal,
+      currentAmount,
+      percentage: Math.min(100, Math.max(0, percentage)),
+      daysRemaining,
+      isAchieved,
+      tradeCount: goalTrades.length,
+    };
+  }
+
+  async updateGoalStatuses(userId: string): Promise<void> {
+    const goals = await this.getGoals(userId);
+    const trades = await new LocalTradeService().getTrades(userId);
+    const now = new Date();
+
+    for (const goal of goals) {
+      if (goal.status === 'active') {
+        const endDate = new Date(goal.endDate);
+        if (endDate < now) {
+          // Goal period has ended, update status based on achievement
+          const progress = this.getGoalProgress(userId, goal, trades);
+          const newStatus: GoalStatus = progress.isAchieved ? 'completed' : 'failed';
+          await this.updateGoal(userId, goal.id, { status: newStatus });
+        }
+      }
+    }
+  }
+}
+
+// Fallback goal service that tries Supabase first, then falls back to localStorage on error
+class FallbackGoalService implements IGoalService {
+  private supabaseService = new SupabaseGoalService();
+  private localService = new LocalGoalService();
+
+  private async tryWithFallback<T>(supabaseFn: () => Promise<T>, localFn: () => Promise<T>): Promise<T> {
+    if (!isSupabaseConfigured) {
+      return localFn();
+    }
+    try {
+      return await supabaseFn();
+    } catch (err) {
+      console.warn('Supabase goal operation failed, falling back to localStorage:', err);
+      return localFn();
+    }
+  }
+
+  async getGoals(userId: string): Promise<Goal[]> {
+    return this.tryWithFallback(
+      () => this.supabaseService.getGoals(userId),
+      () => this.localService.getGoals(userId)
+    );
+  }
+
+  async getActiveGoals(userId: string): Promise<Goal[]> {
+    return this.tryWithFallback(
+      () => this.supabaseService.getActiveGoals(userId),
+      () => this.localService.getActiveGoals(userId)
+    );
+  }
+
+  async getGoal(userId: string, goalId: string): Promise<Goal | null> {
+    return this.tryWithFallback(
+      () => this.supabaseService.getGoal(userId, goalId),
+      () => this.localService.getGoal(userId, goalId)
+    );
+  }
+
+  async createGoal(
+    userId: string,
+    goalData: Omit<Goal, 'id' | 'userId' | 'actualAmount' | 'createdAt' | 'updatedAt'>
+  ): Promise<Goal> {
+    return this.tryWithFallback(
+      () => this.supabaseService.createGoal(userId, goalData),
+      () => this.localService.createGoal(userId, goalData)
+    );
+  }
+
+  async updateGoal(
+    userId: string,
+    goalId: string,
+    updates: Partial<GoalFormData> | Partial<Pick<Goal, 'status'>>
+  ): Promise<Goal> {
+    return this.tryWithFallback(
+      () => this.supabaseService.updateGoal(userId, goalId, updates),
+      () => this.localService.updateGoal(userId, goalId, updates)
+    );
+  }
+
+  async deleteGoal(userId: string, goalId: string): Promise<void> {
+    return this.tryWithFallback(
+      () => this.supabaseService.deleteGoal(userId, goalId),
+      () => this.localService.deleteGoal(userId, goalId)
+    );
+  }
+
+  getGoalProgress(userId: string, goal: Goal, trades: Trade[]): GoalProgress {
+    // This method doesn't use storage, just calculate
+    return this.supabaseService.getGoalProgress(userId, goal, trades);
+  }
+
+  async updateGoalStatuses(userId: string): Promise<void> {
+    return this.tryWithFallback(
+      () => this.supabaseService.updateGoalStatuses(userId),
+      () => this.localService.updateGoalStatuses(userId)
+    );
+  }
+}
+
+// Export singleton instance - uses FallbackGoalService which tries Supabase first, then localStorage
+export const goalService: IGoalService = new FallbackGoalService();

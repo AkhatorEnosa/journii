@@ -50,3 +50,40 @@ export interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
 }
+
+// Goal/Challenge types
+export type GoalStatus = 'active' | 'completed' | 'failed' | 'cancelled';
+export type GoalPeriod = 'daily' | 'weekly' | 'monthly' | 'custom';
+
+export interface Goal {
+  id: string;
+  userId: string;
+  title: string;
+  description: string;
+  targetAmount: number;
+  startDate: string; // ISO date string (YYYY-MM-DD)
+  endDate: string; // ISO date string (YYYY-MM-DD)
+  status: GoalStatus;
+  period: GoalPeriod;
+  actualAmount: number; // Calculated from trades
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GoalFormData {
+  title: string;
+  description: string;
+  targetAmount: number;
+  startDate: string;
+  endDate: string;
+  period: GoalPeriod;
+}
+
+export interface GoalProgress {
+  goal: Goal;
+  currentAmount: number;
+  percentage: number;
+  daysRemaining: number;
+  isAchieved: boolean;
+  tradeCount: number;
+}

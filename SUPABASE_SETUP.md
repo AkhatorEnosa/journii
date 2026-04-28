@@ -69,10 +69,42 @@ CREATE POLICY "Enable all access for trades table"
   USING (true)
   WITH CHECK (true);
 
--- Alternative: If you want to enforce user_id matching, you would need to:
--- 1. Use Supabase Auth alongside Clerk
--- 2. Or create a custom function that validates the user_id
--- 3. Or use a backend API route with service role key
+-- Create goals table for trading challenges
+CREATE TABLE IF NOT EXISTS public.goals (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  target_amount NUMERIC NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('active', 'completed', 'failed', 'cancelled')),
+  period TEXT NOT NULL CHECK (period IN ('daily', 'weekly', 'monthly', 'custom')),
+  actual_amount NUMERIC DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_goals_user_id ON public.goals(user_id);
+CREATE INDEX IF NOT EXISTS idx_goals_status ON public.goals(status);
+CREATE INDEX IF NOT EXISTS idx_goals_dates ON public.goals(start_date, end_date);
+
+-- Create updated_at trigger for goals
+CREATE TRIGGER update_goals_updated_at
+    BEFORE UPDATE ON public.goals
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Enable Row Level Security (RLS) for goals
+ALTER TABLE public.goals ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS policies that allow all users to perform all operations
+CREATE POLICY "Enable all access for goals table"
+  ON public.goals
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
 ```
 
 ## 3. Get Supabase Credentials

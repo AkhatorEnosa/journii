@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar as CalendarIcon, Plus, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { formatPnL, getPnLColor, getPnLBgColor, getPnLBorderColor } from '@/lib/utils';
 import { useDailyTotals, useCreateTrade, useUpdateTrade, useDeleteTrade } from '@/lib/hooks/useTrades';
@@ -185,6 +185,10 @@ export default function DashboardPage() {
             </Button>
             <Button variant="ghost" onClick={() => router.push('/analytics')}>
               Analytics
+            </Button>
+            <Button variant="ghost" onClick={() => router.push('/goals')}>
+              <Target className="w-4 h-4 mr-2" />
+              Goals
             </Button>
           </div>
         </div>
@@ -389,6 +393,14 @@ export default function DashboardPage() {
                 >
                   <DollarSign className="w-4 h-4 mr-2" />
                   View Analytics
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/goals')}
+                  className="w-full border-border text-foreground hover:bg-accent"
+                >
+                  <Target className="w-4 h-4 mr-2" />
+                  Goals & Challenges
                 </Button>
                 <TradeList 
                   selectedDate={selectedDate} 
