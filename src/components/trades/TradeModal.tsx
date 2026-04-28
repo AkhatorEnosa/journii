@@ -17,9 +17,10 @@ interface TradeModalProps {
   onSubmit: (data: TradeFormData) => void;
   trade?: TradeFormData;
   isLoading?: boolean;
+  defaultDate?: string;
 }
 
-export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading = false }: TradeModalProps) {
+export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading = false, defaultDate }: TradeModalProps) {
   const [formData, setFormData] = useState<TradeFormData>({
     symbol: trade?.symbol || '',
     entryPrice: trade?.entryPrice || 0,
@@ -29,7 +30,7 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
     result: trade?.pnl !== undefined && trade.pnl < 0 ? 'loss' : 'profit',
     notes: trade?.notes || '',
     tags: trade?.tags || [],
-    date: trade?.date || new Date().toISOString().split('T')[0],
+    date: trade?.date || defaultDate || new Date().toISOString().split('T')[0],
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -59,10 +60,10 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
         result: 'profit',
         notes: '',
         tags: [],
-        date: new Date().toISOString().split('T')[0],
+        date: defaultDate || new Date().toISOString().split('T')[0],
       });
     }
-  }, [trade]);
+  }, [trade, defaultDate]);
 
   const handleInputChange = (field: keyof TradeFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -98,6 +99,29 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
         newErrors.pnl = 'PnL must be positive for profit trades';
       } else if (result === 'loss' && pnl >= 0) {
         newErrors.pnl = 'PnL must be negative for loss trades';
+      }
+    }
+
+    // Validate price relationship based on direction and result
+    if (formData.entryPrice > 0 && formData.exitPrice > 0) {
+      const { direction, result, entryPrice, exitPrice } = formData;
+      
+      if (direction === 'long' && result === 'profit') {
+        if (exitPrice <= entryPrice) {
+          newErrors.exitPrice = 'Exit price must be greater than entry price for long profit trades';
+        }
+      } else if (direction === 'long' && result === 'loss') {
+        if (exitPrice >= entryPrice) {
+          newErrors.exitPrice = 'Exit price must be less than entry price for long loss trades';
+        }
+      } else if (direction === 'short' && result === 'profit') {
+        if (exitPrice >= entryPrice) {
+          newErrors.exitPrice = 'Exit price must be less than entry price for short profit trades';
+        }
+      } else if (direction === 'short' && result === 'loss') {
+        if (exitPrice <= entryPrice) {
+          newErrors.exitPrice = 'Exit price must be greater than entry price for short loss trades';
+        }
       }
     }
 
@@ -271,7 +295,7 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
                 value={formData.date}
                 onChange={(e) => handleInputChange('date', e.target.value)}
                 className="bg-input border-border text-foreground"
-                disabled={isLoading}
+                disabled={isLoading || !!defaultDate}
               />
               {errors.date && <p className="text-sm text-destructive">{errors.date}</p>}
             </div>

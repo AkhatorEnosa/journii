@@ -37,6 +37,7 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
   const [internalOpen, setInternalOpen] = useState(false);
   const [editingTrade, setEditingTrade] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [viewingTrade, setViewingTrade] = useState<any>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [deleteTradeId, setDeleteTradeId] = useState<string | null>(null);
@@ -113,6 +114,25 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
     setIsEditModalOpen(true);
   };
 
+  const handleAddTrade = () => {
+    setEditingTrade(null);
+    setIsAddModalOpen(true);
+  };
+
+  const handleAddSubmit = async (newTrade: any) => {
+    if (!user) return;
+
+    try {
+      await tradeService.createTrade(user.id, newTrade);
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: tradeKeys.all });
+      await loadTrades();
+      setIsAddModalOpen(false);
+    } catch (err) {
+      console.error('Failed to create trade:', err);
+    }
+  };
+
   const handleViewTrade = (trade: any) => {
     setViewingTrade(trade);
     setIsViewModalOpen(true);
@@ -151,9 +171,19 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
       <Sheet open={isOpen} onOpenChange={handleOpenChange}>
         <SheetContent className="bg-card border-border w-full sm:max-w-md">
           <SheetHeader>
-            <SheetTitle className="text-foreground">
-              {selectedDate ? `Trades for ${formatDate(selectedDate)}` : 'All Trades'}
-            </SheetTitle>
+            <div className="flex items-center justify-between">
+              <SheetTitle className="text-foreground">
+                {selectedDate ? `Trades for ${formatDate(selectedDate)}` : 'All Trades'}
+              </SheetTitle>
+              <Button
+                size="sm"
+                onClick={handleAddTrade}
+                disabled={!!(selectedDate && isFutureDate(selectedDate))}
+                className="text-xs"
+              >
+                Add Trade
+              </Button>
+            </div>
             <SheetDescription className="text-muted-foreground">
               View and manage your trades
             </SheetDescription>
@@ -328,6 +358,18 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
         onSubmit={handleEditSubmit}
         isLoading={isLoading}
         trade={editingTrade}
+      />
+
+      {/* Add Trade Modal */}
+      <TradeModal
+        isOpen={isAddModalOpen}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setEditingTrade(null);
+        }}
+        onSubmit={handleAddSubmit}
+        isLoading={isLoading}
+        defaultDate={selectedDate}
       />
 
       {/* View Trade Details Modal */}
