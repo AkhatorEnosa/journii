@@ -543,7 +543,7 @@ export default function AnalyticsPage() {
                         </span>
                       </div>
                       <div>
-                        <p className="font-medium text-foreground">{symbol.symbol}</p>
+                        <p className="font-medium text-foreground uppercase">{symbol.symbol}</p>
                         <p className="text-sm text-muted-foreground">{symbol.count} trades</p>
                       </div>
                     </div>
