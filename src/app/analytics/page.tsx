@@ -9,7 +9,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { useUser } from '@clerk/nextjs';
 import { formatPnL, getPnLColor, formatPrice } from '@/lib/utils';
 import { tradeService } from '@/lib/store';
-import Header from '../sections/Header';
+import DashboardHeader from '../sections/DashboardHeader';
 import Footer from '../sections/Footer';
 
 // const COLORS = ['var(--color-positive)', 'var(--color-negative)', '#6366f1', '#f59e0b', '#8b5cf6', '#ec4899'];
@@ -185,7 +185,7 @@ export default function AnalyticsPage() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       }
-      <Header />
+      <DashboardHeader />
       <div className='container mx-auto px-4'>
         <Button variant="ghost" onClick={() => router.push('/dashboard')} className="py-8 mt-10 text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-4 h-4 mr-2" />

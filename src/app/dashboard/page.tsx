@@ -11,7 +11,7 @@ import { formatPnL, getPnLColor, getPnLBgColor, getPnLBorderColor } from '@/lib/
 import { useDailyTotals, useCreateTrade, useUpdateTrade, useDeleteTrade } from '@/lib/hooks/useTrades';
 import TradeModal from '@/components/trades/TradeModal';
 import TradeList from '@/components/trades/TradeList';
-import Header from '../sections/Header';
+import DashboardHeader from '../sections/DashboardHeader';
 import Footer from '../sections/Footer';
 
 export default function DashboardPage() {
@@ -161,7 +161,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <Header />
+      <DashboardHeader />
       {isLoadingTotals &&
             <div className="fixed top-0 left-0 flex w-screen h-screen bg-background/50 backdrop-blur-sm justify-center items-center py-8 z-100">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -182,13 +182,6 @@ export default function DashboardPage() {
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Trade
-            </Button>
-            <Button variant="ghost" onClick={() => router.push('/analytics')}>
-              Analytics
-            </Button>
-            <Button variant="ghost" onClick={() => router.push('/goals')}>
-              <Target className="w-4 h-4 mr-2" />
-              Goals
             </Button>
           </div>
         </div>

@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { SignUpButton, Show } from "@clerk/nextjs";
 import Link from "next/link";
 import Header from "./Header";
+import { ScaleIn } from "@/components/animations/ScaleIn";
+import { FadeInUp } from "@/components/animations/FadeInUp";
 
 export const Hero = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -26,48 +28,52 @@ export const Hero = () => {
           <Header />
 
         {/* Hero section */}
-        <div className="container mx-auto mt-12 px-4 text-center">
-          <h1 className="mx-auto max-w-4xl text-5xl font-bold leading-tight text-foreground md:text-6xl lg:text-7xl">
-            Track Your Trades,{' '}
-            <span className="text-primary">Master Your Strategy</span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            A beautiful, powerful trade journal that helps you analyze your performance,
-            identify patterns, and become a more profitable trader.
-          </p>
-          <div className="mt-10 flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
-            <Show when="signed-out">
-              <SignUpButton mode="modal">
-                <button className="h-12 rounded-full bg-primary px-8 text-base font-medium text-primary-foreground hover:bg-primary/90">
-                  Start Trading Smarter
-                </button>
-              </SignUpButton>
-            </Show>
-            <Show when="signed-in">
-              <Link href="/dashboard">
-                <button className="h-12 rounded-full bg-primary px-8 text-base font-medium text-primary-foreground hover:bg-primary/90">
-                  Go to Dashboard
+        <FadeInUp>
+          <div className="container mx-auto mt-12 px-4 text-center">
+            <h1 className="mx-auto max-w-4xl text-5xl font-bold leading-tight text-foreground md:text-6xl lg:text-7xl">
+              Track Your Trades,{' '}
+              <span className="text-primary">Master Your Strategy</span>
+            </h1>
+            <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
+              A beautiful, powerful trade journal that helps you analyze your performance,
+              identify patterns, and become a more profitable trader.
+            </p>
+            <div className="mt-10 flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
+              <Show when="signed-out">
+                <SignUpButton mode="modal">
+                  <button className="h-12 rounded-full bg-primary px-8 text-base font-medium text-primary-foreground hover:bg-primary/90">
+                    Start Trading Smarter
+                  </button>
+                </SignUpButton>
+              </Show>
+              <Show when="signed-in">
+                <Link href="/dashboard">
+                  <button className="h-12 rounded-full bg-primary px-8 text-base font-medium text-primary-foreground hover:bg-primary/90">
+                    Go to Dashboard
+                  </button>
+                </Link>
+              </Show>
+              <Link href="#features">
+                <button className="h-12 rounded-full border border-border px-8 text-base font-medium text-foreground hover:bg-muted">
+                  Explore Features
                 </button>
               </Link>
-            </Show>
-            <Link href="#features">
-              <button className="h-12 rounded-full border border-border px-8 text-base font-medium text-foreground hover:bg-muted">
-                Explore Features
-              </button>
-            </Link>
-          </div>
+            </div>
 
-          <div className="relative mx-auto my-20 p-6 w-full max-w-6xl">
-            <div className="absolute inset-0 rounded shadow-lg bg-emerald-400 blur-[10rem] opacity-10" />
+            <div className="relative mx-auto my-20 p-6 w-full max-w-6xl">
+              <div className="absolute inset-0 rounded shadow-lg bg-emerald-400 blur-[10rem] opacity-10" />
 
-            {/* Hero Image - Trading Dashboard Preview */}
-            <img
-              src="https://ik.imagekit.io/btlflc5goc/tradrjourney/tradrjourney.png"
-              alt="Trading Dashboard Preview"
-              className="relative w-full h-auto shadow-lg rounded-lg"
-            />
+              {/* Hero Image - Trading Dashboard Preview */}
+              <ScaleIn>
+                <img
+                  src="https://ik.imagekit.io/btlflc5goc/tradrjourney/tradrjourney.png"
+                  alt="Trading Dashboard Preview"
+                  className="relative w-full h-auto shadow-lg rounded-lg"
+                />
+              </ScaleIn>
+            </div>
           </div>
-        </div>
+        </FadeInUp>
       </div>
     </div>
   );

@@ -1,16 +1,13 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  TrendingUp, 
-  BarChart3, 
-  Target,
-  MessageSquare,
-  Clock
-} from 'lucide-react';
+import {  TrendingUp, BarChart3, Target,MessageSquare,Clock} from 'lucide-react';
 import Features from './sections/Features';
 import { Hero } from './sections/Hero';
 import Footer from './sections/Footer';
+import { FadeInUp } from '@/components/animations/FadeInUp';
+import { ScaleIn } from '@/components/animations/ScaleIn';
+
 
 const stats = [
   { value: '10K+', label: 'Active Traders' },
@@ -102,28 +99,32 @@ export default function Home() {
         {/* Benefits Section */}
         <section className="py-20 px-4">
           <div className="container mx-auto max-w-6xl">
-            <div className="text-center space-y-4 mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-                Why Successful Traders Journal
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Consistent journaling is the #1 habit of profitable traders. Here's how TradrJourney helps you build that habit.
-              </p>
-            </div>
+            <FadeInUp>
+              <div className="text-center space-y-4 mb-16">
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
+                  Why Successful Traders Journal
+                </h2>
+                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                  Consistent journaling is the #1 habit of profitable traders. Here's how TradrJourney helps you build that habit.
+                </p>
+              </div>
+            </FadeInUp>
 
             <div className="grid md:grid-cols-2 gap-8">
               {benefits.map((benefit, index) => (
-                <Card key={index} className="bg-card border-border hover:border-primary/30 transition-colors">
-                  <CardHeader>
-                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                      <benefit.icon className="w-6 h-6 text-primary" />
-                    </div>
-                    <CardTitle className="text-foreground">{benefit.title}</CardTitle>
-                    <CardDescription className="text-muted-foreground">
-                      {benefit.description}
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
+                <FadeInUp key={index} className="w-full">
+                  <Card className="bg-card border-border hover:border-primary/30 transition-colors">
+                    <CardHeader>
+                      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                        <benefit.icon className="w-6 h-6 text-primary" />
+                      </div>
+                      <CardTitle className="text-foreground">{benefit.title}</CardTitle>
+                      <CardDescription className="text-muted-foreground">
+                        {benefit.description}
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </FadeInUp>
               ))}
             </div>
           </div>
@@ -135,33 +136,37 @@ export default function Home() {
         {/* Testimonials Section */}
         <section className="py-20 px-4 bg-card/50">
           <div className="container mx-auto max-w-6xl">
-            <div className="text-center space-y-4 mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-                Loved by Traders Worldwide
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Join thousands of traders who have transformed their performance with TradrJourney.
-              </p>
-            </div>
+            <FadeInUp>
+              <div className="text-center space-y-4 mb-16">
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
+                  Loved by Traders Worldwide
+                </h2>
+                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                  Join thousands of traders who have transformed their performance with TradrJourney.
+                </p>
+              </div>
+            </FadeInUp>
 
             <div className="grid md:grid-cols-3 gap-8">
               {testimonials.map((testimonial, index) => (
-                <Card key={index} className="bg-card border-border">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center mb-4">
-                      <img 
-                        src={testimonial.avatar} 
-                        alt={testimonial.author}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                      <div className="ml-4">
-                        <div className="font-semibold text-foreground">{testimonial.author}</div>
-                        <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                <ScaleIn key={index} delay={index * 0.1} className="w-full">
+                  <Card className="bg-card border-border">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center mb-4">
+                        <img 
+                          src={testimonial.avatar} 
+                          alt={testimonial.author}
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                        <div className="ml-4">
+                          <div className="font-semibold text-foreground">{testimonial.author}</div>
+                          <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                        </div>
                       </div>
-                    </div>
-                    <p className="text-muted-foreground italic">&ldquo;{testimonial.content}&rdquo;</p>
-                  </CardContent>
-                </Card>
+                      <p className="text-muted-foreground italic">&ldquo;{testimonial.content}&rdquo;</p>
+                    </CardContent>
+                  </Card>
+                </ScaleIn>
               ))}
             </div>
           </div>
@@ -170,28 +175,32 @@ export default function Home() {
         {/* FAQ Section */}
         <section className="py-20 px-4">
           <div className="container mx-auto max-w-4xl">
-            <div className="text-center space-y-4 mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-                Frequently Asked Questions
-              </h2>
-              <p className="text-lg text-muted-foreground">
-                Everything you need to know about getting started with TradrJourney.
-              </p>
-            </div>
+            <FadeInUp>
+              <div className="text-center space-y-4 mb-16">
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
+                  Frequently Asked Questions
+                </h2>
+                <p className="text-lg text-muted-foreground">
+                  Everything you need to know about getting started with TradrJourney.
+                </p>
+              </div>
+            </FadeInUp>
 
             <div className="space-y-6">
               {faqs.map((faq, index) => (
-                <Card key={index} className="bg-card border-border">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                      <MessageSquare className="w-5 h-5 text-primary" />
-                      {faq.question}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">{faq.answer}</p>
-                  </CardContent>
-                </Card>
+                <FadeInUp key={index} className="w-full">
+                  <Card className="bg-card border-border">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                        <MessageSquare className="w-5 h-5 text-primary" />
+                        {faq.question}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground">{faq.answer}</p>
+                    </CardContent>
+                  </Card>
+                </FadeInUp>
               ))}
             </div>
           </div>
