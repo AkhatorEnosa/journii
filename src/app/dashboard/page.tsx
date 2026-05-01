@@ -5,14 +5,18 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar as CalendarIcon, Plus, TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { formatPnL, getPnLColor, getPnLBgColor, getPnLBorderColor } from '@/lib/utils';
-import { useDailyTotals, useCreateTrade, useUpdateTrade, useDeleteTrade } from '@/lib/hooks/useTrades';
+import { useCreateTrade } from '@/lib/hooks/useTrades';
+import { tradeService } from '@/lib/store';
+import { Trade } from '@/lib/types';
 import TradeModal from '@/components/trades/TradeModal';
 import TradeList from '@/components/trades/TradeList';
 import DashboardHeader from '../sections/DashboardHeader';
 import Footer from '../sections/Footer';
+
+type TimeFilter = 'all' | 'year' | 'month' | 'week';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -21,17 +25,144 @@ export default function DashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTradeListOpen, setIsTradeListOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [dailyTotals, setDailyTotals] = useState<any[]>([]);
+  const [isLoadingTotals, setIsLoadingTotals] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
 
-  // React Query hooks - MUST be called unconditionally at the top
-  const { data: dailyTotals = [], isLoading: isLoadingTotals } = useDailyTotals(
-    user?.id || '',
-    currentMonth.getFullYear(),
-    currentMonth.getMonth()
-  );
+  // Calculate date range based on time filter
+  const getDateRange = () => {
+    const now = new Date();
+    let startDate: string;
+    let endDate: string;
+    let displayMonth: Date | null = null;
+
+    switch (timeFilter) {
+      case 'week':
+        // Get start of current week (Sunday)
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        startDate = startOfWeek.toLocaleDateString('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        endDate = now.toLocaleDateString('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        displayMonth = startOfWeek;
+        break;
+      case 'month':
+        // Current month
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        startDate = startOfMonth.toLocaleDateString('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        endDate = now.toLocaleDateString('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        displayMonth = startOfMonth;
+        break;
+      case 'year':
+        // Current year
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        startDate = startOfYear.toLocaleDateString('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        endDate = now.toLocaleDateString('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        displayMonth = startOfYear;
+        break;
+      case 'all':
+      default:
+        // All time - use a very early date
+        startDate = '2000-01-01';
+        endDate = now.toLocaleDateString('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        displayMonth = null;
+        break;
+    }
+
+    return { startDate, endDate, displayMonth };
+  };
+
+  // Load trades based on time filter
+  useEffect(() => {
+    if (isLoaded && isSignedIn && user) {
+      loadTradesForTimeFilter();
+    }
+  }, [user, isLoaded, isSignedIn, timeFilter]);
+
+  const loadTradesForTimeFilter = async () => {
+    if (!user) return;
+    
+    setIsLoadingTotals(true);
+    setLoadError(null);
+    try {
+      const { startDate, endDate, displayMonth } = getDateRange();
+      
+      console.log('[Dashboard] Loading trades for time filter:', { 
+        userId: user.id, 
+        timeFilter,
+        startDate, 
+        endDate 
+      });
+      
+      // Fetch trades for the time range
+      const trades = await tradeService.getTradesByTimeRange(user.id, startDate, endDate);
+      
+      console.log('[Dashboard] Trades loaded:', trades);
+      
+      // Convert trades to daily totals for calendar display
+      const dailyMap = new Map<string, Trade[]>();
+      trades.forEach((trade) => {
+        const normalizedDate = trade.date;
+        if (!dailyMap.has(normalizedDate)) {
+          dailyMap.set(normalizedDate, []);
+        }
+        dailyMap.get(normalizedDate)!.push(trade);
+      });
+
+      const dailyTotalsData: any[] = [];
+      dailyMap.forEach((trades, date) => {
+        const totalPnl = trades.reduce((sum, t) => sum + t.pnl, 0);
+        dailyTotalsData.push({
+          date,
+          totalPnl,
+          tradeCount: trades.length,
+          trades,
+        });
+      });
+
+      setDailyTotals(dailyTotalsData);
+      
+      // Update calendar view to show the relevant period
+      if (displayMonth) {
+        setCurrentMonth(displayMonth);
+      }
+    } catch (err) {
+      console.error('[Dashboard] Failed to load trades:', err);
+      setLoadError('Failed to load trade data. Please try refreshing the page.');
+    } finally {
+      setIsLoadingTotals(false);
+    }
+  };
 
   const createTradeMutation = useCreateTrade();
-  // const updateTradeMutation = useUpdateTrade();
-  // const deleteTradeMutation = useDeleteTrade();
 
   // Calculate stats from daily totals
   const stats = useMemo(() => {
@@ -81,6 +212,8 @@ export default function DashboardPage() {
       });
       setIsModalOpen(false);
       setSelectedDate('');
+      // Refresh daily totals after creating a trade
+      await loadTradesForTimeFilter();
     } catch (err) {
       console.error('Failed to create trade:', err);
     }
@@ -188,12 +321,47 @@ export default function DashboardPage() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* Error Message */}
+        {loadError && (
+          <Card className="bg-rose-500/10 border-rose-500/20 mb-8">
+            <CardContent className="py-4">
+              <p className="text-rose-500 text-sm">
+                {loadError}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Time Filter */}
+        <div className="mb-6">
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-sm text-muted-foreground mr-2 font-semibold">Period:</span>
+            {(['all', 'year', 'month', 'week'] as TimeFilter[]).map((filter) => (
+              <Button
+                key={filter}
+                variant={timeFilter === filter ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTimeFilter(filter)}
+                className={
+                  timeFilter === filter
+                    ? 'bg-primary hover:bg-primary/90'
+                    : 'border-border text-foreground hover:bg-accent'
+                }
+              >
+                {filter === 'all' ? 'All Time' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+              </Button>
+            ))}
+          </div>
+        </div>
+
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-foreground">Total Trades</CardTitle>
-              <CardDescription className="text-muted-foreground">All time</CardDescription>
+              <CardDescription className="text-muted-foreground">
+                {timeFilter === 'all' ? 'All time' : timeFilter === 'year' ? 'This year' : timeFilter === 'month' ? 'This month' : 'This week'}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground">{stats.totalTrades}</div>
@@ -203,7 +371,9 @@ export default function DashboardPage() {
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-foreground">Total PnL</CardTitle>
-              <CardDescription className="text-muted-foreground">All time</CardDescription>
+              <CardDescription className="text-muted-foreground">
+                {timeFilter === 'all' ? 'All time' : timeFilter === 'year' ? 'This year' : timeFilter === 'month' ? 'This month' : 'This week'}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className={`text-2xl font-bold ${getPnLColor(stats.totalPnL)}`}>
@@ -215,7 +385,9 @@ export default function DashboardPage() {
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-foreground">Win Rate</CardTitle>
-              <CardDescription className="text-muted-foreground">Percentage</CardDescription>
+              <CardDescription className="text-muted-foreground">
+                {timeFilter === 'all' ? 'All time' : timeFilter === 'year' ? 'This year' : timeFilter === 'month' ? 'This month' : 'This week'}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground">{stats.winRate.toFixed(1)}%</div>

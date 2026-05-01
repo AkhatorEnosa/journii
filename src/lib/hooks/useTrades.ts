@@ -41,6 +41,8 @@ export function useDailyTotals(userId: string, year: number, month: number) {
     queryKey: tradeKeys.dailyTotals({ userId, year, month }),
     queryFn: () => tradeService.getDailyTotals(userId, year, month),
     enabled: !!userId,
+    retry: 2,
+    staleTime: 30000, // 30 seconds
   });
 }
 

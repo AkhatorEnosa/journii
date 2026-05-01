@@ -15,6 +15,7 @@ const STORAGE_KEYS = {
 interface ITradeService {
   getTrades(userId: string): Promise<Trade[]>;
   getTradesByDate(userId: string, date: string): Promise<Trade[]>;
+  getTradesByTimeRange(userId: string, startDate: string, endDate: string): Promise<Trade[]>;
   createTrade(userId: string, trade: Omit<Trade, 'id' | 'createdAt' | 'updatedAt'>): Promise<Trade>;
   updateTrade(userId: string, tradeId: string, updates: Partial<TradeFormData>): Promise<Trade>;
   deleteTrade(userId: string, tradeId: string): Promise<void>;
@@ -46,6 +47,22 @@ class SupabaseTradeService implements ITradeService {
       .eq('user_id', userId)
       .eq('date', date)
       .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return data.map(this.mapSupabaseTradeToTrade);
+  }
+
+  async getTradesByTimeRange(userId: string, startDate: string, endDate: string): Promise<Trade[]> {
+    if (!supabase) throw new Error('Supabase is not configured');
+
+    const { data, error } = await supabase
+      .from('trades')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date', { ascending: false });
 
     if (error) throw error;
 
@@ -132,6 +149,24 @@ class SupabaseTradeService implements ITradeService {
     const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
     const endDate = `${year}-${String(month + 2).padStart(2, '0')}-01`;
 
+    console.log('[Supabase] getDailyTotals:', { userId, year, month, startDate, endDate });
+
+    // First, let's check if there are ANY trades for this user (diagnostic)
+    const { data: allUserTrades, error: allTradesError } = await supabase
+      .from('trades')
+      .select('id, user_id, date')
+      .eq('user_id', userId)
+      .limit(5);
+
+    if (allTradesError) {
+      console.error('[Supabase] Diagnostic - Error fetching all trades:', allTradesError);
+    } else {
+      console.log('[Supabase] Diagnostic - User has', allUserTrades?.length || 0, 'trades total');
+      if (allUserTrades && allUserTrades.length > 0) {
+        console.log('[Supabase] Diagnostic - Sample trades:', allUserTrades.slice(0, 3));
+      }
+    }
+
     const { data, error } = await supabase
       .from('trades')
       .select('*')
@@ -140,16 +175,29 @@ class SupabaseTradeService implements ITradeService {
       .lt('date', endDate)
       .order('date', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('[Supabase] getDailyTotals error:', error);
+      throw error;
+    }
+
+    console.log('[Supabase] getDailyTotals raw data:', data);
+    console.log('[Supabase] getDailyTotals raw data count:', data?.length || 0);
+
+    if (!data || data.length === 0) {
+      console.log('[Supabase] getDailyTotals: No trades found for this month');
+      return [];
+    }
 
     const trades = data.map(this.mapSupabaseTradeToTrade);
     const dailyMap = new Map<string, Trade[]>();
 
     trades.forEach((trade) => {
-      if (!dailyMap.has(trade.date)) {
-        dailyMap.set(trade.date, []);
+      // Normalize date to YYYY-MM-DD format for consistent matching
+      const normalizedDate = trade.date;
+      if (!dailyMap.has(normalizedDate)) {
+        dailyMap.set(normalizedDate, []);
       }
-      dailyMap.get(trade.date)!.push(trade);
+      dailyMap.get(normalizedDate)!.push(trade);
     });
 
     const dailyTotals: DailyTotal[] = [];
@@ -163,6 +211,7 @@ class SupabaseTradeService implements ITradeService {
       });
     });
 
+    console.log('[Supabase] getDailyTotals result:', dailyTotals);
     return dailyTotals;
   }
 
@@ -222,6 +271,11 @@ class LocalTradeService implements ITradeService {
   async getTradesByDate(userId: string, date: string): Promise<Trade[]> {
     const trades = await this.getTrades(userId);
     return trades.filter((t) => t.date === date);
+  }
+
+  async getTradesByTimeRange(userId: string, startDate: string, endDate: string): Promise<Trade[]> {
+    const trades = await this.getTrades(userId);
+    return trades.filter((t) => t.date >= startDate && t.date <= endDate);
   }
 
   async createTrade(
