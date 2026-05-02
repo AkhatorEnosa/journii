@@ -61,19 +61,39 @@ const testimonials = [
 ];
 
 const faqs = [
+  // {
+  //   question: 'How do I import my trades?',
+  //   answer: 'You can easily import your trades from popular platforms like MetaTrader, Thinkorswim, and more using our CSV import feature.',
+  // },
   {
     question: 'Is my data secure?',
-    answer: 'Absolutely. We use bank-level 256-bit encryption and never store your broker credentials. Your data is backed up daily and you can export everything at any time.',
+    answer: 'Absolutely. We use industry-standard encryption to protect your data and never share it with third parties.',
   },
   {
-    question: 'Can I use this for multiple accounts?',
-    answer: 'Yes! Track unlimited accounts. View consolidated performance or analyze each account separately.',
+    question: 'Can I use TradrJourney on mobile?',
+    answer: 'Yes! Our responsive design ensures you can access your trading journal and analytics on any device.',
   },
   {
-    question: 'Do you offer a free trial?',
-    answer: 'Yes, it is free for use. No credit card required. You can also get started with our free plan forever.',
+    question: 'What if I need help?',
+    answer: 'Our support team is here for you. You can reach out via email or live chat for any assistance you need.',
   },
-];
+  {
+    question: 'Is it free to use?',
+    answer: 'We offer a free tier with basic features. For advanced analytics and unlimited trade tracking, we have affordable subscription plans.',
+  },
+  {
+    question: 'Can I export my data?',
+    answer: 'For now, no. However, soon you can export your trade data and analytics reports in CSV or PDF format anytime on premium.',
+  },
+  {
+    question: 'Do you have a mobile app?',
+    answer: 'Not yet, but we are actively working on developing a mobile app for both iOS and Android. Stay tuned for updates!',
+  },
+  {
+    question: 'Can I share my journal with my mentor?',
+    answer: 'Yes! With our premium subscription, you can generate shareable links to your trading journal and analytics reports for mentors or accountability partners.',
+  }
+]
 
 export default function Home() {
   return (

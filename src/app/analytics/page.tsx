@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,8 @@ import { formatPnL, getPnLColor, formatPrice } from '@/lib/utils';
 import { tradeService } from '@/lib/store';
 import DashboardHeader from '../sections/DashboardHeader';
 import Footer from '../sections/Footer';
+import CurrencyPieChart from '@/components/charts/CurrencyPieChart';
+import PnLPieChart from '@/components/charts/PnLPieChart';
 
 // const COLORS = ['var(--color-positive)', 'var(--color-negative)', '#6366f1', '#f59e0b', '#8b5cf6', '#ec4899'];
 
@@ -158,6 +160,56 @@ export default function AnalyticsPage() {
       setIsLoading(false);
     }
   };
+
+  // Calculate currency distribution data for pie chart
+  const currencyChartData = useMemo(() => {
+    const allTrades = data.symbolPerformance;
+    if (allTrades.length === 0) return [];
+
+    return allTrades.map(item => ({
+      name: item.symbol,
+      value: Math.abs(item.totalPnl),
+      count: item.count,
+    })).sort((a, b) => b.value - a.value).slice(0, 10); // Top 10 currencies
+  }, [data.symbolPerformance]);
+
+  // Calculate PnL distribution data for pie chart
+  const pnlChartData = useMemo(() => {
+    if (data.symbolPerformance.length === 0) return [];
+
+    let profitTotal = 0;
+    let lossTotal = 0;
+    let profitCount = 0;
+    let lossCount = 0;
+
+    data.symbolPerformance.forEach(item => {
+      if (item.totalPnl > 0) {
+        profitTotal += item.totalPnl;
+        profitCount += item.count;
+      } else if (item.totalPnl < 0) {
+        lossTotal += item.totalPnl; // Keep negative value
+        lossCount += item.count;
+      }
+    });
+
+    const chartData = [];
+    if (profitTotal > 0) {
+      chartData.push({
+        name: 'Profit',
+        value: profitTotal, // Positive value
+        count: profitCount,
+      });
+    }
+    if (lossTotal < 0) {
+      chartData.push({
+        name: 'Loss',
+        value: lossTotal, // Negative value
+        count: lossCount,
+      });
+    }
+
+    return chartData;
+  }, [data.symbolPerformance]);
 
 
   const totalPnL = data.dailyPnL.reduce((sum, d) => sum + d.pnl, 0);
@@ -438,6 +490,20 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
+        {/* Currency and PnL Distribution Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <CurrencyPieChart 
+            data={currencyChartData}
+            title="Currency Distribution"
+            description="Trades by currency pair (by PnL volume)"
+          />
+          <PnLPieChart 
+            data={pnlChartData}
+            title="Profit & Loss Distribution"
+            description="Breakdown of profits and losses"
+          />
+        </div>
+
         {/* Bottom Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Direction Performance */}
@@ -459,7 +525,7 @@ export default function AnalyticsPage() {
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
-                      stroke='none'
+                      // stroke='none'
                       style={{
                         textTransform: 'capitalize'
                       }}
