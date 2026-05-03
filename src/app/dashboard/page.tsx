@@ -525,7 +525,7 @@ export default function DashboardPage() {
                         <span>Loss Day</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-muted/20 border border-muted/40 rounded" />
+                        <div className="w-3 h-3 bg-muted/20 border border-slate-500/20 rounded" />
                         <span>No Trades</span>
                       </div>
                     </div>

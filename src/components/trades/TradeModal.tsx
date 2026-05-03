@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { formatPnL, formatPrice, getPnLColor, getPnLBgColor, getPnLBorderColor } from '@/lib/utils';
+// import { formatPnL, formatPrice, getPnLColor, getPnLBgColor, getPnLBorderColor } from '@/lib/utils';
 import { TradeFormData } from '@/lib/types';
 
 interface TradeModalProps {
@@ -22,7 +22,7 @@ interface TradeModalProps {
 
 export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading = false, defaultDate }: TradeModalProps) {
   const [formData, setFormData] = useState<TradeFormData>({
-    symbol: trade?.symbol || '',
+    symbol: trade?.symbol?.toLowerCase() || '',
     entryPrice: trade?.entryPrice || 0,
     exitPrice: trade?.exitPrice || 0,
     pnl: trade?.pnl || 0,
@@ -39,7 +39,7 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
   useEffect(() => {
     if (trade) {
       setFormData({
-        symbol: trade.symbol || '',
+        symbol: trade?.symbol?.toLowerCase() || '',
         entryPrice: trade.entryPrice || 0,
         exitPrice: trade.exitPrice || 0,
         pnl: trade.pnl || 0,
