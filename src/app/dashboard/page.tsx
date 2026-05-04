@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, DollarSign, Target, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { formatPnL, getPnLColor, getPnLBgColor, getPnLBorderColor } from '@/lib/utils';
 import { useCreateTrade } from '@/lib/hooks/useTrades';
 import { tradeService } from '@/lib/store';
 import { Trade } from '@/lib/types';
+import { exportTradesToCSV, exportTradesToPDF, exportAnalyticsSummaryToPDF } from '@/lib/export';
 import TradeModal from '@/components/trades/TradeModal';
 import TradeList from '@/components/trades/TradeList';
 import DashboardHeader from '../sections/DashboardHeader';
@@ -29,6 +30,7 @@ export default function DashboardPage() {
   const [isLoadingTotals, setIsLoadingTotals] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 
   // Calculate date range based on time filter
   const getDateRange = () => {
@@ -300,7 +302,7 @@ export default function DashboardPage() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
       }
-      <header className="py-4 mt-10 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="py-4 mt-10 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-30">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div>
@@ -309,6 +311,82 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            {/* Export Menu */}
+            <div className="relative">
+              <Button
+                variant="outline"
+                onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+                className="border-border text-foreground hover:bg-accent"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </Button>
+              
+              {isExportMenuOpen && (
+                <>
+                  {/* Backdrop to close menu */}
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setIsExportMenuOpen(false)}
+                  />
+                  
+                  {/* Dropdown menu */}
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-lg shadow-lg z-50">
+                    <div className="p-2">
+                      <div className="text-xs font-semibold text-muted-foreground px-3 py-2">
+                        Export Trade Data
+                      </div>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-foreground hover:bg-accent"
+                        onClick={() => {
+                          const allTrades = dailyTotals.flatMap(d => d.trades);
+                          if (allTrades.length > 0) {
+                            exportTradesToCSV(allTrades);
+                          }
+                          setIsExportMenuOpen(false);
+                        }}
+                      >
+                        <FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-500" />
+                        Export as CSV
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-foreground hover:bg-accent"
+                        onClick={() => {
+                          const allTrades = dailyTotals.flatMap(d => d.trades);
+                          if (allTrades.length > 0) {
+                            exportTradesToPDF(allTrades, stats, timeFilter);
+                          }
+                          setIsExportMenuOpen(false);
+                        }}
+                      >
+                        <FileText className="w-4 h-4 mr-2 text-rose-500" />
+                        Export as PDF
+                      </Button>
+                      
+                      <div className="border-t border-border my-2" />
+                      
+                      <div className="text-xs font-semibold text-muted-foreground px-3 py-2">
+                        Export Analytics Summary
+                      </div>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-foreground hover:bg-accent"
+                        onClick={() => {
+                          exportAnalyticsSummaryToPDF(stats, timeFilter);
+                          setIsExportMenuOpen(false);
+                        }}
+                      >
+                        <FileText className="w-4 h-4 mr-2 text-blue-500" />
+                        Summary Report (PDF)
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
             <Button
               onClick={() => setIsModalOpen(true)}
               className="bg-primary hover:bg-primary/90"

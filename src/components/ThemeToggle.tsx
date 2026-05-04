@@ -25,14 +25,20 @@ export function ThemeToggle() {
     <Button
       variant="ghost"
       size="icon"
-      className="h-9 w-9"
+      className="h-9 w-fit"
       onClick={() => setTheme(theme === 'dark' || resolvedTheme === 'dark' ? 'light' : 'dark')}
       aria-label="Toggle theme"
     >
       {theme === 'dark' || resolvedTheme === 'dark' ? (
-        <Sun className="h-4 w-4 text-foreground" />
+        <div className='flex gap-3 justify-center items-center text-sm text-muted-foreground hover:text-foreground transition-colors py-2'>
+          {/* <span className='md:hidden'>Switch to Light Mode</span> */}
+          <Sun className="h-4 w-4" />
+        </div>
       ) : (
-        <Moon className="h-4 w-4 text-foreground" />
+        <div className='flex gap-3 justify-center items-center text-sm text-muted-foreground hover:text-foreground transition-colors py-2'>
+          {/* <span className='md:hidden'>Switch to Dark Mode</span> */}
+          <Moon className="h-4 w-4 text-foreground" />
+        </div>
       )}
     </Button>
   );
