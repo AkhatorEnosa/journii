@@ -149,9 +149,9 @@ class SupabaseTradeService implements ITradeService {
     const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
     const endDate = `${year}-${String(month + 2).padStart(2, '0')}-01`;
 
-    console.log('[Supabase] getDailyTotals:', { userId, year, month, startDate, endDate });
+    // console.log('[Supabase] getDailyTotals:', { userId, year, month, startDate, endDate });
 
-    // First, let's check if there are ANY trades for this user (diagnostic)
+    // check if there are ANY trades for this user (diagnostic)
     const { data: allUserTrades, error: allTradesError } = await supabase
       .from('trades')
       .select('id, user_id, date')
@@ -180,11 +180,11 @@ class SupabaseTradeService implements ITradeService {
       throw error;
     }
 
-    console.log('[Supabase] getDailyTotals raw data:', data);
-    console.log('[Supabase] getDailyTotals raw data count:', data?.length || 0);
+    // console.log('[Supabase] getDailyTotals raw data:', data);
+    // console.log('[Supabase] getDailyTotals raw data count:', data?.length || 0);
 
     if (!data || data.length === 0) {
-      console.log('[Supabase] getDailyTotals: No trades found for this month');
+      // console.log('[Supabase] getDailyTotals: No trades found for this month');
       return [];
     }
 
@@ -211,7 +211,7 @@ class SupabaseTradeService implements ITradeService {
       });
     });
 
-    console.log('[Supabase] getDailyTotals result:', dailyTotals);
+    // console.log('[Supabase] getDailyTotals result:', dailyTotals);
     return dailyTotals;
   }
 
