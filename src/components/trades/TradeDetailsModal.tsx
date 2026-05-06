@@ -1,23 +1,101 @@
 'use client';
 
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { formatPnL, getPnLColor, formatDate, formatPrice } from '@/lib/utils';
-import { Calendar, Tag, FileText, TrendingUp, TrendingDown, X, Award } from 'lucide-react';
-import { TradeFormData } from '@/lib/types';
+import { Calendar, Tag, FileText, TrendingUp, TrendingDown, X, Award, Edit, Trash2 } from 'lucide-react';
+import { Trade, TradeFormData } from '@/lib/types';
+import { useUser } from '@clerk/nextjs';
+import { tradeService } from '@/lib/store';
+import { useQueryClient } from '@tanstack/react-query';
+import { tradeKeys } from '@/lib/hooks/useTrades';
+import TradeModal from './TradeModal';
 
 interface TradeDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  trade: TradeFormData | null;
+  trade: Trade | null;
+  onTradeMutation?: () => void;
+  onRefresh?: () => void;
 }
 
-export default function TradeDetailsModal({ isOpen, onClose, trade }: TradeDetailsModalProps) {
+export default function TradeDetailsModal({ isOpen, onClose, trade, onTradeMutation, onRefresh }: TradeDetailsModalProps) {
+  const { user, isSignedIn } = useUser();
+  const queryClient = useQueryClient();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   if (!trade) return null;
 
   const isProfitable = trade.pnl > 0;
   const isLoss = trade.pnl < 0;
+
+  const handleEditClick = () => {
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditClose = () => {
+    setIsEditModalOpen(false);
+  };
+
+  const handleEditSubmit = async (updatedTrade: any) => {
+    if (!user || !trade) return;
+
+    try {
+      await tradeService.updateTrade(user.id, trade.id, updatedTrade);
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: tradeKeys.all });
+      // Refresh the trade list if callback provided
+      onRefresh?.();
+      // Notify parent component to refresh its data
+      onTradeMutation?.();
+      setIsEditModalOpen(false);
+      onClose();
+    } catch (err) {
+      console.error('Failed to update trade:', err);
+    }
+  };
+
+  const handleDeleteClick = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteClose = () => {
+    setIsDeleteDialogOpen(false);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!user || !trade) return;
+    
+    setIsDeleting(true);
+    try {
+      await tradeService.deleteTrade(user.id, trade.id);
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: tradeKeys.all });
+      // Refresh the trade list if callback provided
+      onRefresh?.();
+      // Notify parent component to refresh its data
+      onTradeMutation?.();
+      setIsDeleteDialogOpen(false);
+      onClose();
+    } catch (err) {
+      console.error('Failed to delete trade:', err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -25,7 +103,7 @@ export default function TradeDetailsModal({ isOpen, onClose, trade }: TradeDetai
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <DialogTitle className="text-foreground text-xl">{trade.symbol}</DialogTitle>
+              <DialogTitle className="text-foreground text-xl uppercase">{trade.symbol}</DialogTitle>
               <Badge 
                 variant="secondary" 
                 className={`text-sm px-3 py-1 ${
@@ -47,14 +125,6 @@ export default function TradeDetailsModal({ isOpen, onClose, trade }: TradeDetai
                 )}
               </Badge>
             </div>
-            {/* <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <X className="w-4 h-4" />
-            </Button> */}
           </div>
           <DialogDescription className="text-muted-foreground flex items-center gap-2 mt-2">
             <Calendar className="w-4 h-4" />
@@ -130,7 +200,66 @@ export default function TradeDetailsModal({ isOpen, onClose, trade }: TradeDetai
             </div>
           )}
         </div>
+
+            <div className="w-full flex justify-center items-center gap-1 border-t py-5">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleEditClick}
+                className="text-muted-foreground hover:text-foreground hover:bg-accent"
+              >
+                <Edit className="w-4 h-4" /> Edit Trade
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDeleteClick}
+                className="text-muted-foreground hover:text-rose-500 hover:bg-accent"
+              >
+                <Trash2 className="w-4 h-4" /> Delete Trade
+              </Button>
+              {/* <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-4 h-4" />
+              </Button> */}
+            </div>
       </DialogContent>
+
+      {/* Edit Trade Modal */}
+      <TradeModal
+        isOpen={isEditModalOpen}
+        onClose={handleEditClose}
+        onSubmit={handleEditSubmit}
+        trade={trade}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={handleDeleteClose}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-foreground">Delete Trade</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              Are you sure you want to delete this trade? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="text-muted-foreground hover:text-foreground" onClick={handleDeleteClose}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-rose-500 hover:bg-rose-600"
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

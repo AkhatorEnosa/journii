@@ -29,9 +29,10 @@ interface TradeListProps {
   selectedDate?: string;
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
+  onTradeMutation?: () => void;
 }
 
-export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpenChange }: TradeListProps) {
+export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpenChange, onTradeMutation }: TradeListProps) {
   const [trades, setTrades] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
@@ -96,6 +97,8 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
       // Invalidate queries to refetch data
       queryClient.invalidateQueries({ queryKey: tradeKeys.all });
       await loadTrades();
+      // Notify parent component to refresh its data
+      onTradeMutation?.();
       setIsDeleteDialogOpen(false);
       setDeleteTradeId(null);
     } catch (err) {
@@ -127,6 +130,8 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
       // Invalidate queries to refetch data
       queryClient.invalidateQueries({ queryKey: tradeKeys.all });
       await loadTrades();
+      // Notify parent component to refresh its data
+      onTradeMutation?.();
       setIsAddModalOpen(false);
     } catch (err) {
       console.error('Failed to create trade:', err);
@@ -146,6 +151,8 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
       // Invalidate queries to refetch data
       queryClient.invalidateQueries({ queryKey: tradeKeys.all });
       await loadTrades();
+      // Notify parent component to refresh its data
+      onTradeMutation?.();
       setIsEditModalOpen(false);
       setEditingTrade(null);
     } catch (err) {
@@ -380,6 +387,8 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
           setViewingTrade(null);
         }}
         trade={viewingTrade}
+        onTradeMutation={onTradeMutation}
+        onRefresh={loadTrades}
       />
 
       {/* Delete Confirmation Dialog */}

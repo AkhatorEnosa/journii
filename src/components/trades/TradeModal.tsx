@@ -22,7 +22,7 @@ interface TradeModalProps {
 
 export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading = false, defaultDate }: TradeModalProps) {
   const [formData, setFormData] = useState<TradeFormData>({
-    symbol: trade?.symbol?.toLowerCase() || '',
+    symbol: trade?.symbol || '',
     entryPrice: trade?.entryPrice || 0,
     exitPrice: trade?.exitPrice || 0,
     pnl: trade?.pnl || 0,
@@ -39,7 +39,7 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
   useEffect(() => {
     if (trade) {
       setFormData({
-        symbol: trade?.symbol?.toLowerCase() || '',
+        symbol: trade?.symbol || '',
         entryPrice: trade.entryPrice || 0,
         exitPrice: trade.exitPrice || 0,
         pnl: trade.pnl || 0,
@@ -150,7 +150,13 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
       return;
     }
 
-    onSubmit(formData);
+    // Convert symbol to lowercase before submitting
+    const dataWithLowercaseSymbol = {
+      ...formData,
+      symbol: formData.symbol.toLowerCase(),
+    };
+
+    onSubmit(dataWithLowercaseSymbol);
   };
 
   const handleTagAdd = (tag: string) => {

@@ -648,7 +648,8 @@ export default function DashboardPage() {
                 <TradeList 
                   selectedDate={selectedDate} 
                   isOpen={isTradeListOpen} 
-                  onOpenChange={setIsTradeListOpen} 
+                  onOpenChange={setIsTradeListOpen}
+                  onTradeMutation={loadTradesForTimeFilter}
                 />
               </CardContent>
             </Card>
