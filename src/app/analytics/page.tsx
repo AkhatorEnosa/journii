@@ -28,6 +28,7 @@ export default function AnalyticsPage() {
     directionPerformance: [] as { direction: string; totalPnl: number; count: number; wins: number; winRate: number }[],
     winRateByDay: [] as { day: string; winRate: number }[],
     topSymbols: [] as { symbol: string; totalPnl: number; count: number }[],
+    filteredTrades: [] as { pnl: number }[],
   });
 
   // Redirect to home page if not authenticated
@@ -57,11 +58,13 @@ export default function AnalyticsPage() {
       startDate.setDate(startDate.getDate() - days);
 
       // Filter trades by timeframe
-      const filteredTrades = trades.filter(t => new Date(t.date) >= startDate);
+      const filteredTradesData = trades.filter(t => new Date(t.date) >= startDate);
 
       // Daily PnL
       const dailyPnLMap = new Map();
-      filteredTrades.forEach(trade => {
+
+      // Aggregate PnL by day
+      filteredTradesData.forEach(trade => {
         const date = trade.date;
         if (!dailyPnLMap.has(date)) {
           dailyPnLMap.set(date, 0);
@@ -93,7 +96,7 @@ export default function AnalyticsPage() {
 
       // Symbol Performance
       const symbolMap = new Map();
-      filteredTrades.forEach(trade => {
+      filteredTradesData.forEach(trade => {
         if (!symbolMap.has(trade.symbol)) {
           symbolMap.set(trade.symbol, { symbol: trade.symbol, totalPnl: 0, count: 0 });
         }
@@ -108,7 +111,7 @@ export default function AnalyticsPage() {
 
       // Direction Performance
       const directionMap = new Map();
-      filteredTrades.forEach(trade => {
+      filteredTradesData.forEach(trade => {
         if (!directionMap.has(trade.direction)) {
           directionMap.set(trade.direction, { direction: trade.direction, totalPnl: 0, count: 0, wins: 0 });
         }
@@ -126,7 +129,7 @@ export default function AnalyticsPage() {
 
       // Win Rate by Day
       const winRateByDayMap = new Map();
-      filteredTrades.forEach(trade => {
+      filteredTradesData.forEach(trade => {
         const day = new Date(trade.date).toLocaleDateString('en-US', { weekday: 'short' });
         if (!winRateByDayMap.has(day)) {
           winRateByDayMap.set(day, { day, total: 0, wins: 0 });
@@ -146,6 +149,9 @@ export default function AnalyticsPage() {
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
 
+      // Calculate filtered trades for PnL distribution
+      const filteredTradesForPnL = filteredTradesData.map(t => ({ pnl: t.pnl }));
+
       setData({
         dailyPnL,
         cumulativePnL,
@@ -153,6 +159,7 @@ export default function AnalyticsPage() {
         directionPerformance,
         winRateByDay,
         topSymbols,
+        filteredTrades: filteredTradesForPnL,
       });
     } catch (err) {
       console.error('Failed to load analytics data:', err);
@@ -161,60 +168,63 @@ export default function AnalyticsPage() {
     }
   };
 
-  // Calculate currency distribution data for pie chart
+  // Calculate currency distribution data for chart
   const currencyChartData = useMemo(() => {
     const allTrades = data.symbolPerformance;
     if (allTrades.length === 0) return [];
 
     return allTrades.map(item => ({
       name: item.symbol,
-      value: Math.abs(item.totalPnl),
+      value: item.totalPnl,
       count: item.count,
-    })).sort((a, b) => b.value - a.value).slice(0, 10); // Top 10 currencies
+    })).sort((a, b) => Math.abs(b.value) - Math.abs(a.value)).slice(0, 10); // Top 10 currencies by magnitude
   }, [data.symbolPerformance]);
 
-  // Calculate PnL distribution data for pie chart
-  const pnlChartData = useMemo(() => {
-    if (data.symbolPerformance.length === 0) return [];
+      // Calculate PnL distribution data for pie chart
+      const pnlChartData = useMemo(() => {
+        if (data.filteredTrades.length === 0) return [];
 
-    let profitTotal = 0;
-    let lossTotal = 0;
-    let profitCount = 0;
-    let lossCount = 0;
+        let profitTotal = 0;
+        let lossTotal = 0;
+        let profitCount = 0;
+        let lossCount = 0;
 
-    data.symbolPerformance.forEach(item => {
-      if (item.totalPnl > 0) {
-        profitTotal += item.totalPnl;
-        profitCount += item.count;
-      } else if (item.totalPnl < 0) {
-        lossTotal += item.totalPnl; // Keep negative value
-        lossCount += item.count;
-      }
-    });
+        // Calculate directly from individual trades to get accurate profit/loss totals
+        data.filteredTrades.forEach(trade => {
+          if (trade.pnl > 0) {
+            profitTotal += trade.pnl;
+            profitCount += 1;
+          } else if (trade.pnl < 0) {
+            lossTotal += trade.pnl; // Keep negative value
+            lossCount += 1;
+          }
+        });
 
-    const chartData = [];
-    if (profitTotal > 0) {
-      chartData.push({
-        name: 'Profit',
-        value: profitTotal, // Positive value
-        count: profitCount,
-      });
-    }
-    if (lossTotal < 0) {
-      chartData.push({
-        name: 'Loss',
-        value: lossTotal, // Negative value
-        count: lossCount,
-      });
-    }
+        const chartData = [];
+        if (profitTotal > 0) {
+          chartData.push({
+            name: 'Profit',
+            value: Math.round(profitTotal * 100) / 100, // Positive value
+            count: profitCount,
+          });
+        }
+        if (lossTotal < 0) {
+          chartData.push({
+            name: 'Loss',
+            value: Math.round(lossTotal * 100) / 100, // Negative value
+            count: lossCount,
+          });
+        }
 
-    return chartData;
-  }, [data.symbolPerformance]);
+        return chartData;
+      }, [data.filteredTrades]);
 
 
   const totalPnL = data.dailyPnL.reduce((sum, d) => sum + d.pnl, 0);
   const totalTrades = data.symbolPerformance.reduce((sum, s) => sum + s.count, 0);
-  const winRate = totalTrades > 0 ? Math.round((data.directionPerformance.reduce((sum, d) => sum + (d.winRate * d.count / 100), 0) / (data.directionPerformance.reduce((sum, d) => sum + d.count, 0))) * 100) : 0;
+  // Calculate win rate from filtered trades directly for accuracy
+  const totalWins = data.filteredTrades.filter(t => t.pnl > 0).length;
+  const winRate = totalTrades > 0 ? Math.round((totalWins / totalTrades) * 100) : 0;
 
   // Show loading state while checking authentication
   if (!isLoaded) {

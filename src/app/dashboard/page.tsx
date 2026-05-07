@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, TrendingUp, TrendingDown, DollarSign, Target, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Target, Download, FileSpreadsheet, FileText, BarChart3 } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { formatPnL, getPnLColor, getPnLBgColor, getPnLBorderColor } from '@/lib/utils';
 import { useCreateTrade } from '@/lib/hooks/useTrades';
@@ -634,7 +634,7 @@ export default function DashboardPage() {
                   onClick={() => router.push('/analytics')}
                   className="w-full border-border text-foreground hover:bg-accent"
                 >
-                  <DollarSign className="w-4 h-4 mr-2" />
+                  <BarChart3 className="w-4 h-4 mr-2" />
                   View Analytics
                 </Button>
                 <Button
