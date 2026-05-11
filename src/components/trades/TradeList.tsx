@@ -20,7 +20,7 @@ import { formatPnL, getPnLColor, formatDate } from '@/lib/utils';
 import { tradeService } from '@/lib/store';
 import { useUser } from '@clerk/nextjs';
 import { useQueryClient } from '@tanstack/react-query';
-import { Calendar, Edit, Trash2, AlertCircle, Tag } from 'lucide-react';
+import { Edit, Trash2, AlertCircle, Tag } from 'lucide-react';
 import TradeModal from './TradeModal';
 import TradeDetailsModal from './TradeDetailsModal';
 import { tradeKeys } from '@/lib/hooks/useTrades';

@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { GoalProgress, GoalStatus } from '@/lib/types';
+import { GoalProgress } from '@/lib/types';
 import { formatPnL, getPnLColor } from '@/lib/utils';
 import { Target, TrendingUp, Calendar, CheckCircle2, XCircle, Clock, Trash2 } from 'lucide-react';
 

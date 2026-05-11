@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { formatPnL, getPnLColor, formatDate, formatPrice } from '@/lib/utils';
 import { Calendar, Tag, FileText, TrendingUp, TrendingDown, X, Award, Edit, Trash2 } from 'lucide-react';
-import { Trade, TradeFormData } from '@/lib/types';
+import { Trade } from '@/lib/types';
 import { useUser } from '@clerk/nextjs';
 import { tradeService } from '@/lib/store';
 import { useQueryClient } from '@tanstack/react-query';

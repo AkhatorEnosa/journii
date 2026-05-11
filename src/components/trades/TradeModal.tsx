@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-// import { formatPnL, formatPrice, getPnLColor, getPnLBgColor, getPnLBorderColor } from '@/lib/utils';
 import { TradeFormData } from '@/lib/types';
 
 interface TradeModalProps {

@@ -5,16 +5,14 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, TrendingUp, DollarSign, Target, Calendar } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useUser } from '@clerk/nextjs';
-import { formatPnL, getPnLColor, formatPrice } from '@/lib/utils';
+import { formatPnL, getPnLColor } from '@/lib/utils';
 import { tradeService } from '@/lib/store';
 import DashboardHeader from '../sections/DashboardHeader';
 import Footer from '../sections/Footer';
 import CurrencyPieChart from '@/components/charts/CurrencyPieChart';
 import PnLPieChart from '@/components/charts/PnLPieChart';
-
-// const COLORS = ['var(--color-positive)', 'var(--color-negative)', '#6366f1', '#f59e0b', '#8b5cf6', '#ec4899'];
 
 export default function AnalyticsPage() {
   const router = useRouter();

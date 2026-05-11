@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
-import { Target, Plus, AlertCircle, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { Target, Plus } from 'lucide-react';
 import { goalService } from '@/lib/store';
 import { tradeService } from '@/lib/store';
 import { Goal, GoalProgress, Trade } from '@/lib/types';

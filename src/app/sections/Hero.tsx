@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Menu, X } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { ArrowRight } from "lucide-react";
 import { SignUpButton, Show } from "@clerk/nextjs";
 import Link from "next/link";
 import Header from "./Header";
@@ -10,7 +9,6 @@ import { ScaleIn } from "@/components/animations/ScaleIn";
 import { FadeInUp } from "@/components/animations/FadeInUp";
 
 export const Hero = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">

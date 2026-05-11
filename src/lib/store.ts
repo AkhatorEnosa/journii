@@ -69,9 +69,7 @@ class SupabaseTradeService implements ITradeService {
     return data.map(this.mapSupabaseTradeToTrade);
   }
 
-  async createTrade(
-    userId: string,
-    tradeData: Omit<Trade, 'id' | 'createdAt' | 'updatedAt'>
+  async createTrade( userId: string, tradeData: Omit<Trade, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<Trade> {
     if (!supabase) throw new Error('Supabase is not configured');
 

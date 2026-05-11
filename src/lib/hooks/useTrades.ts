@@ -2,9 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
 import { tradeService } from '@/lib/store';
-import { Trade, TradeFormData, DailyTotal } from '@/lib/types';
+import { Trade, TradeFormData } from '@/lib/types';
 
 // Query keys
 export const tradeKeys = {
@@ -50,7 +49,6 @@ export function useDailyTotals(userId: string, year: number, month: number) {
 export function useCreateTrade() {
   const queryClient = useQueryClient();
   const { user } = useUser();
-  const router = useRouter();
 
   return useMutation({
     mutationFn: async (tradeData: Omit<Trade, 'id' | 'createdAt' | 'updatedAt'>) => {
