@@ -10,6 +10,7 @@ import { tradeService } from '@/lib/store';
 import { Goal, GoalProgress, Trade } from '@/lib/types';
 import GoalModal from './GoalModal';
 import GoalCard from './GoalCard';
+import GoalTradesModal from './GoalTradesModal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 type GoalFilter = 'all' | 'active' | 'completed' | 'failed';
@@ -20,6 +21,9 @@ export default function GoalsSection() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [viewTradesGoal, setViewTradesGoal] = useState<Goal | null>(null);
+  const [isTradesModalOpen, setIsTradesModalOpen] = useState(false);
   const [deleteGoalId, setDeleteGoalId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<GoalFilter>('all');
@@ -87,29 +91,47 @@ export default function GoalsSection() {
 
     setIsLoading(true);
     try {
-      console.log('Creating goal with data:', JSON.stringify(goalData, null, 2));
+      console.log('Saving goal with data:', JSON.stringify(goalData, null, 2));
       console.log('User ID:', user.id);
       
-      const goalPayload = {
-        title: goalData.title,
-        description: goalData.description || '',
-        targetAmount: goalData.targetAmount,
-        startDate: goalData.startDate,
-        endDate: goalData.endDate,
-        status: 'active' as const,
-        period: goalData.period,
-      };
+      if (editingGoal) {
+        // Update existing goal
+        const goalPayload = {
+          title: goalData.title,
+          description: goalData.description || '',
+          targetAmount: goalData.targetAmount,
+          startDate: goalData.startDate,
+          endDate: goalData.endDate,
+          period: goalData.period,
+        };
+        
+        console.log('Updating goal:', JSON.stringify(goalPayload, null, 2));
+        await goalService.updateGoal(user.id, editingGoal.id, goalPayload);
+        console.log('Goal updated successfully');
+      } else {
+        // Create new goal
+        const goalPayload = {
+          title: goalData.title,
+          description: goalData.description || '',
+          targetAmount: goalData.targetAmount,
+          startDate: goalData.startDate,
+          endDate: goalData.endDate,
+          status: 'active' as const,
+          period: goalData.period,
+        };
+        
+        console.log('Creating goal:', JSON.stringify(goalPayload, null, 2));
+        await goalService.createGoal(user.id, goalPayload);
+        console.log('Goal created successfully');
+      }
       
-      console.log('Goal payload:', JSON.stringify(goalPayload, null, 2));
-      
-      await goalService.createGoal(user.id, goalPayload);
-      console.log('Goal created successfully');
       setIsModalOpen(false);
+      setEditingGoal(null);
       await loadData();
     } catch (err) {
-      console.error('Failed to create goal:', err);
+      console.error('Failed to save goal:', err);
       console.error('Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
-      alert(`Failed to create goal: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      alert(`Failed to save goal: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
@@ -202,7 +224,15 @@ export default function GoalsSection() {
                 <GoalCard
                   key={progress.goal.id}
                   progress={progress}
-                  showActions={progress.goal.status === 'active'}
+                  showActions={true}
+                  onEdit={() => {
+                    setEditingGoal(progress.goal);
+                    setIsModalOpen(true);
+                  }}
+                  onViewTrades={() => {
+                    setViewTradesGoal(progress.goal);
+                    setIsTradesModalOpen(true);
+                  }}
                   onDelete={() => {
                     setDeleteGoalId(progress.goal.id);
                     setIsDeleteDialogOpen(true);
@@ -236,12 +266,27 @@ export default function GoalsSection() {
         )}
       </div>
 
-      {/* Create Goal Modal */}
+      {/* Create/Edit Goal Modal */}
       <GoalModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingGoal(null);
+        }}
         onSubmit={handleCreateGoal}
         isLoading={isLoading}
+        goal={editingGoal || undefined}
+      />
+
+      {/* View Trades Modal */}
+      <GoalTradesModal
+        isOpen={isTradesModalOpen}
+        onClose={() => {
+          setIsTradesModalOpen(false);
+          setViewTradesGoal(null);
+        }}
+        goal={viewTradesGoal}
+        trades={trades}
       />
 
       {/* Delete Confirmation Dialog */}

@@ -506,22 +506,33 @@ class SupabaseGoalService implements IGoalService {
 
   getGoalProgress(userId: string, goal: Goal, trades: Trade[]): GoalProgress {
     // Filter trades within the goal's date range
+    // Use date string comparison for consistency (YYYY-MM-DD format)
     const goalTrades = trades.filter(trade => {
-      const tradeDate = new Date(trade.date);
-      const startDate = new Date(goal.startDate);
-      const endDate = new Date(goal.endDate);
-      return tradeDate >= startDate && tradeDate <= endDate;
+      return trade.date >= goal.startDate && trade.date <= goal.endDate;
     });
 
     const currentAmount = goalTrades.reduce((sum, trade) => sum + trade.pnl, 0);
     const percentage = goal.targetAmount !== 0 ? (currentAmount / goal.targetAmount) * 100 : 0;
-    const daysRemaining = Math.max(0, Math.ceil((new Date(goal.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)));
+    
+    // Calculate days remaining using end of day (23:59:59) in local timezone
+    // This ensures the goal is active for the entire end date
+    const today = new Date();
+    const endDateParts = goal.endDate.split('-');
+    const endDate = new Date(
+      parseInt(endDateParts[0]),
+      parseInt(endDateParts[1]) - 1,
+      parseInt(endDateParts[2]),
+      23, 59, 59
+    );
+    const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
+    
     const isAchieved = currentAmount >= goal.targetAmount;
 
     return {
       goal,
       currentAmount,
-      percentage: Math.min(100, Math.max(0, percentage)),
+      // Allow negative percentages to show losses, but cap at 100%
+      percentage: Math.min(100, percentage),
       daysRemaining,
       isAchieved,
       tradeCount: goalTrades.length,
@@ -534,7 +545,16 @@ class SupabaseGoalService implements IGoalService {
 
     for (const goal of goals) {
       if (goal.status === 'active') {
-        const endDate = new Date(goal.endDate);
+        // Parse end date and set to end of day (23:59:59) in local timezone
+        // This ensures the goal remains active for the entire end date
+        const endDateParts = goal.endDate.split('-');
+        const endDate = new Date(
+          parseInt(endDateParts[0]),
+          parseInt(endDateParts[1]) - 1,
+          parseInt(endDateParts[2]),
+          23, 59, 59
+        );
+        
         if (endDate < now) {
           // Goal period has ended, update status based on achievement
           const trades = await new SupabaseTradeService().getTrades(userId);
@@ -636,22 +656,33 @@ class LocalGoalService implements IGoalService {
 
   getGoalProgress(userId: string, goal: Goal, trades: Trade[]): GoalProgress {
     // Filter trades within the goal's date range
+    // Use date string comparison for consistency (YYYY-MM-DD format)
     const goalTrades = trades.filter(trade => {
-      const tradeDate = new Date(trade.date);
-      const startDate = new Date(goal.startDate);
-      const endDate = new Date(goal.endDate);
-      return tradeDate >= startDate && tradeDate <= endDate;
+      return trade.date >= goal.startDate && trade.date <= goal.endDate;
     });
 
     const currentAmount = goalTrades.reduce((sum, trade) => sum + trade.pnl, 0);
     const percentage = goal.targetAmount !== 0 ? (currentAmount / goal.targetAmount) * 100 : 0;
-    const daysRemaining = Math.max(0, Math.ceil((new Date(goal.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)));
+    
+    // Calculate days remaining using end of day (23:59:59) in local timezone
+    // This ensures the goal is active for the entire end date
+    const today = new Date();
+    const endDateParts = goal.endDate.split('-');
+    const endDate = new Date(
+      parseInt(endDateParts[0]),
+      parseInt(endDateParts[1]) - 1,
+      parseInt(endDateParts[2]),
+      23, 59, 59
+    );
+    const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
+    
     const isAchieved = currentAmount >= goal.targetAmount;
 
     return {
       goal,
       currentAmount,
-      percentage: Math.min(100, Math.max(0, percentage)),
+      // Allow negative percentages to show losses, but cap at 100%
+      percentage: Math.min(100, percentage),
       daysRemaining,
       isAchieved,
       tradeCount: goalTrades.length,
@@ -665,7 +696,16 @@ class LocalGoalService implements IGoalService {
 
     for (const goal of goals) {
       if (goal.status === 'active') {
-        const endDate = new Date(goal.endDate);
+        // Parse end date and set to end of day (23:59:59) in local timezone
+        // This ensures the goal remains active for the entire end date
+        const endDateParts = goal.endDate.split('-');
+        const endDate = new Date(
+          parseInt(endDateParts[0]),
+          parseInt(endDateParts[1]) - 1,
+          parseInt(endDateParts[2]),
+          23, 59, 59
+        );
+        
         if (endDate < now) {
           // Goal period has ended, update status based on achievement
           const progress = this.getGoalProgress(userId, goal, trades);

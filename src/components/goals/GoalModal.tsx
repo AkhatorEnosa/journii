@@ -15,11 +15,14 @@ interface GoalModalProps {
   onSubmit: (data: GoalFormData) => void;
   isLoading?: boolean;
   defaultEndDate?: string;
+  goal?: import('@/lib/types').Goal;
 }
 
-export default function GoalModal({ isOpen, onClose, onSubmit, isLoading = false, defaultEndDate }: GoalModalProps) {
+export default function GoalModal({ isOpen, onClose, onSubmit, isLoading = false, defaultEndDate, goal }: GoalModalProps) {
   const today = new Date().toISOString().split('T')[0];
   const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+  const isEditMode = !!goal;
 
   const [formData, setFormData] = useState<GoalFormData>({
     title: '',
@@ -34,17 +37,28 @@ export default function GoalModal({ isOpen, onClose, onSubmit, isLoading = false
 
   useEffect(() => {
     if (isOpen) {
-      setFormData({
-        title: '',
-        description: '',
-        targetAmount: 0,
-        startDate: today,
-        endDate: defaultEndDate || nextWeek,
-        period: 'weekly',
-      });
+      if (isEditMode && goal) {
+        setFormData({
+          title: goal.title,
+          description: goal.description || '',
+          targetAmount: goal.targetAmount,
+          startDate: goal.startDate,
+          endDate: goal.endDate,
+          period: goal.period,
+        });
+      } else {
+        setFormData({
+          title: '',
+          description: '',
+          targetAmount: 0,
+          startDate: today,
+          endDate: defaultEndDate || nextWeek,
+          period: 'weekly',
+        });
+      }
       setErrors({});
     }
-  }, [isOpen, defaultEndDate]);
+  }, [isOpen, defaultEndDate, isEditMode, goal]);
 
   const handleInputChange = (field: keyof GoalFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -120,9 +134,13 @@ export default function GoalModal({ isOpen, onClose, onSubmit, isLoading = false
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg bg-card border-border">
         <DialogHeader>
-          <DialogTitle className="text-foreground">Create New Goal</DialogTitle>
+          <DialogTitle className="text-foreground">
+            {isEditMode ? 'Edit Goal' : 'Create New Goal'}
+          </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Set a trading goal to challenge yourself and track your progress
+            {isEditMode
+              ? 'Update your trading goal details'
+              : 'Set a trading goal to challenge yourself and track your progress'}
           </DialogDescription>
         </DialogHeader>
         
@@ -242,7 +260,7 @@ export default function GoalModal({ isOpen, onClose, onSubmit, isLoading = false
               className="bg-primary hover:bg-primary/90"
               disabled={isLoading}
             >
-              {isLoading ? 'Creating...' : 'Create Goal'}
+              {isLoading ? (isEditMode ? 'Saving...' : 'Creating...') : (isEditMode ? 'Save Changes' : 'Create Goal')}
             </Button>
           </DialogFooter>
         </form>

@@ -5,15 +5,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { GoalProgress } from '@/lib/types';
 import { formatPnL, getPnLColor } from '@/lib/utils';
-import { Target, TrendingUp, Calendar, CheckCircle2, XCircle, Clock, Trash2 } from 'lucide-react';
+import { Target, TrendingUp, Calendar, CheckCircle2, XCircle, Clock, Trash2, Pencil, ListFilter } from 'lucide-react';
 
 interface GoalCardProps {
   progress: GoalProgress;
   onDelete?: () => void;
+  onEdit?: () => void;
+  onViewTrades?: () => void;
   showActions?: boolean;
 }
 
-export default function GoalCard({ progress, onDelete, showActions = false }: GoalCardProps) {
+export default function GoalCard({ progress, onDelete, onEdit, onViewTrades, showActions = false }: GoalCardProps) {
   const { goal, currentAmount, percentage, daysRemaining, isAchieved, tradeCount } = progress;
 
   const getStatusBadge = () => {
@@ -87,18 +89,35 @@ export default function GoalCard({ progress, onDelete, showActions = false }: Go
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {getStatusBadge()}
-          {showActions && onDelete && goal.status === 'active' && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground hover:text-rose-500 hover:bg-accent h-7 px-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+          {showActions && (
+            <>
+              {onEdit && goal.status === 'active' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-blue-500 hover:bg-accent h-7 px-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit();
+                  }}
+                >
+                  <Pencil className="w-4 h-4" />
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-rose-500 hover:bg-accent h-7 px-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -119,6 +138,22 @@ export default function GoalCard({ progress, onDelete, showActions = false }: Go
             />
           </div>
         </div>
+
+        {/* View Trades Button */}
+        {showActions && onViewTrades && tradeCount > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full gap-2 text-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewTrades();
+            }}
+          >
+            <ListFilter className="w-4 h-4" />
+            View {tradeCount} Trade{tradeCount !== 1 ? 's' : ''}
+          </Button>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-3">
