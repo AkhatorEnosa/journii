@@ -1,0 +1,17 @@
+# TradrJourney - Professional Trading Journal
+# https://tradrjourney.netlify.app
+
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://tradrjourney.netlify.app/sitemap.xml
+
+# Crawl-delay (optional, for respectful crawling)
+Crawl-delay: 1
+
+# Disallow private/user areas (if any public URLs exist)
+# Disallow: /dashboard
+# Disallow: /analytics
+# Disallow: /goals

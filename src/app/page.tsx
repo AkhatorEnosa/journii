@@ -8,7 +8,6 @@ import Footer from './sections/Footer';
 import { FadeInUp } from '@/components/animations/FadeInUp';
 import { ScaleIn } from '@/components/animations/ScaleIn';
 
-
 const stats = [
   { value: '10K+', label: 'Active Traders' },
   { value: '1M+', label: 'Trades Tracked' },
