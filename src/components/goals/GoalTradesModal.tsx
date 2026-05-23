@@ -32,11 +32,13 @@ export default function GoalTradesModal({ isOpen, onClose, goal, trades }: GoalT
   const avgWin = winningTrades.length > 0 ? totalProfit / winningTrades.length : 0;
   const avgLoss = losingTrades.length > 0 ? totalLoss / losingTrades.length : 0;
 
-  const formatDate = (dateStr: string) => {
+  // Helper functions
+  const formatDate = (dateStr: string) => { // Format date as "MMM D, YYYY"
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
+  // Direction badge with icons
   const getDirectionBadge = (direction: 'long' | 'short') => {
     const isLong = direction === 'long';
     return (
@@ -49,6 +51,7 @@ export default function GoalTradesModal({ isOpen, onClose, goal, trades }: GoalT
     );
   };
 
+  // Result badge with icons
   const getResultBadge = (result: 'profit' | 'loss' | null) => {
     if (result === 'profit') {
       return (
@@ -116,11 +119,11 @@ export default function GoalTradesModal({ isOpen, onClose, goal, trades }: GoalT
               {goalTrades.map((trade) => (
                 <div
                   key={trade.id}
-                  className="flex items-center justify-between p-3 rounded-lg border border-border hover:border-primary/50 transition-colors"
+                  className="flex items-center justify-between p-3 rounded-lg border border-border  transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <div>
-                      <div className="font-medium text-foreground">{trade.symbol}</div>
+                      <div className="font-medium text-foreground uppercase">{trade.symbol}</div>
                       <div className="text-xs text-muted-foreground flex items-center gap-2">
                         <Calendar className="w-3 h-3" />
                         {formatDate(trade.date)}

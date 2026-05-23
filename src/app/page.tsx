@@ -7,6 +7,9 @@ import { Hero } from './sections/Hero';
 import Footer from './sections/Footer';
 import { FadeInUp } from '@/components/animations/FadeInUp';
 import { ScaleIn } from '@/components/animations/ScaleIn';
+import { useUser } from '@clerk/nextjs';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 const stats = [
   { value: '10K+', label: 'Active Traders' },
@@ -95,6 +98,16 @@ const faqs = [
 ]
 
 export default function Home() {
+  const router = useRouter();
+  const { isLoaded, isSignedIn } = useUser();
+
+  // Redirect to home page if not authenticated
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      router.push('/dashboard');
+    }
+  }, [isLoaded, isSignedIn, router]);
+
   return (
     <div className="min-h-screen bg-background">
       <main>

@@ -74,7 +74,7 @@ export default function GoalCard({ progress, onDelete, onEdit, onViewTrades, sho
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-sm hover:border-primary/50 transition-colors w-full max-w-2xl mx-auto">
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm transition-colors w-full max-w-2xl mx-auto">
       <div className="flex items-start justify-between gap-2 mb-4">
         <div className="flex-1 min-w-0">
           <h3 className="text-lg font-semibold text-foreground truncate flex items-center gap-2">
@@ -139,22 +139,6 @@ export default function GoalCard({ progress, onDelete, onEdit, onViewTrades, sho
           </div>
         </div>
 
-        {/* View Trades Button */}
-        {showActions && onViewTrades && tradeCount > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full gap-2 text-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onViewTrades();
-            }}
-          >
-            <ListFilter className="w-4 h-4" />
-            View {tradeCount} Trade{tradeCount !== 1 ? 's' : ''}
-          </Button>
-        )}
-
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-muted/20 rounded-lg p-2 text-center">
@@ -174,6 +158,22 @@ export default function GoalCard({ progress, onDelete, onEdit, onViewTrades, sho
             <div className="font-semibold text-foreground">{tradeCount}</div>
           </div>
         </div>
+
+        {/* View Trades Button */}
+        {showActions && onViewTrades && tradeCount > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full gap-2 text-sm py-5 hover:border-primary hover:bg-primary/10"
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewTrades();
+            }}
+          >
+            <ListFilter className="w-4 h-4" />
+            View {tradeCount} Trade{tradeCount !== 1 ? 's' : ''}
+          </Button>
+        )}
 
         {/* Date Range */}
         <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">

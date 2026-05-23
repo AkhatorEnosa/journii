@@ -1,6 +1,5 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
 import { UserButton } from '@clerk/nextjs';
 import { Menu, X, Target, BarChart3, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
@@ -192,7 +191,7 @@ const DashboardHeader = () => {
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
-    <header className="border-b border-border z-50">
+    <header className={`border-b border-border z-50 ${pathname !== '/dashboard' ? 'sticky top-0 bg-background/95 backdrop-blur-sm' : 'bg-transparent'}`}>
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
