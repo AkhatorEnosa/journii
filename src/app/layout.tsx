@@ -178,6 +178,8 @@ const structuredData = {
         description: "Free tier available with basic features",
       },
       featureList: [
+        "TradrJourney is a professional trading journal and analytics platform designed to help traders track, analyze, and improve their trading performance. With TradrJourney, traders can easily log their trades, monitor their performance, and gain valuable insights to enhance their trading strategies.",
+        "",
         "Trade tracking and journaling",
         "Performance analytics and insights",
         "Win rate analysis",
@@ -216,6 +218,8 @@ const structuredData = {
       },
       description: APP_DESCRIPTION,
       featureList: [
+        "TradrJourney",
+        "Tradr journey",
         "Trade journaling",
         "Analytics dashboard",
         "Performance tracking",
