@@ -31,6 +31,10 @@ export const metadata: Metadata = {
   },
   description: APP_DESCRIPTION,
   keywords: [
+    "journii",
+    "tradr journey",
+    "tradrjourney",
+    "trader journey",
     "trading journal",
     "trade tracker",
     "trading analytics",

@@ -28,14 +28,16 @@ function DialogOverlay({
   ...props
 }: DialogPrimitive.Backdrop.Props) {
   return (
-    <DialogPrimitive.Backdrop
+    // <DialogPrimitive.Backdrop /> removed in v1.0.0, so we render the backdrop as a div with the same styles. The idea is to avoid the backdrop closing the dialog when clicked, which is the default behavior of the backdrop in Base UI Dialog.
+     <div
       data-slot="dialog-overlay"
       className={cn(
         "fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         className
       )}
       {...props}
-    />
+      style={props.style as React.CSSProperties}
+    ></div>
   )
 }
 

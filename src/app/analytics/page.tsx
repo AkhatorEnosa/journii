@@ -18,7 +18,7 @@ export default function AnalyticsPage() {
   const router = useRouter();
   const { user, isLoaded, isSignedIn } = useUser();
   const [isLoading, setIsLoading] = useState(false);
-  const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d'>('30d');
+  const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d' | 'all'>('all');
   const [data, setData] = useState({
     dailyPnL: [] as { date: string; pnl: number }[],
     cumulativePnL: [] as { date: string; cumulative: number }[],
@@ -50,13 +50,14 @@ export default function AnalyticsPage() {
     try {
       const trades = await tradeService.getTrades(user.id);
       
-      // Get days based on timeframe
-      const days = timeframe === '7d' ? 7 : timeframe === '30d' ? 30 : 90;
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - days);
-
       // Filter trades by timeframe
-      const filteredTradesData = trades.filter(t => new Date(t.date) >= startDate);
+      let filteredTradesData = trades;
+      if (timeframe !== 'all') {
+        const days = timeframe === '7d' ? 7 : timeframe === '30d' ? 30 : 90;
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+        filteredTradesData = trades.filter(t => new Date(t.date) >= startDate);
+      }
 
       // Daily PnL
       const dailyPnLMap = new Map();
@@ -263,6 +264,13 @@ export default function AnalyticsPage() {
           </div>
           <div className="flex gap-2">
             <Button
+              variant={timeframe === 'all' ? 'default' : 'outline'}
+              onClick={() => setTimeframe('all')}
+              className={timeframe === 'all' ? 'bg-primary hover:bg-primary/90' : 'border-border text-foreground hover:bg-accent'}
+            >
+              All Time
+            </Button>
+            <Button
               variant={timeframe === '7d' ? 'default' : 'outline'}
               onClick={() => setTimeframe('7d')}
               className={timeframe === '7d' ? 'bg-primary hover:bg-primary/90' : 'border-border text-foreground hover:bg-accent'}
@@ -293,7 +301,7 @@ export default function AnalyticsPage() {
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
               <CardDescription className="text-muted-foreground">Total PnL</CardDescription>
-              <CardTitle className={`text-2xl ${getPnLColor(totalPnL)}`}>
+              <CardTitle className={`text-2xl font-bold ${getPnLColor(totalPnL)}`}>
                 {formatPnL(totalPnL)}
               </CardTitle>
             </CardHeader>
@@ -308,7 +316,7 @@ export default function AnalyticsPage() {
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
               <CardDescription className="text-muted-foreground">Total Trades</CardDescription>
-              <CardTitle className="text-2xl text-foreground">{totalTrades}</CardTitle>
+              <CardTitle className="text-2xl text-foreground font-bold">{totalTrades}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
@@ -321,7 +329,7 @@ export default function AnalyticsPage() {
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
               <CardDescription className="text-muted-foreground">Win Rate</CardDescription>
-              <CardTitle className="text-2xl text-foreground">{winRate}%</CardTitle>
+              <CardTitle className="text-2xl text-foreground font-bold">{winRate}%</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
@@ -334,7 +342,7 @@ export default function AnalyticsPage() {
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
               <CardDescription className="text-muted-foreground">Avg PnL/Trade</CardDescription>
-              <CardTitle className={`text-2xl ${getPnLColor(totalPnL / (totalTrades || 1))}`}>
+              <CardTitle className={`text-2xl font-bold ${getPnLColor(totalPnL / (totalTrades || 1))}`}>
                 {formatPnL(totalPnL / (totalTrades || 1))}
               </CardTitle>
             </CardHeader>
