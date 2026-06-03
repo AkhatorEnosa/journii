@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, TrendingUp, TrendingDown, Target, Download, FileSpreadsheet, FileText, BarChart3 } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Target, Download, FileSpreadsheet, FileText, BarChart3, Brain } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { formatPnL, getPnLColor, getPnLBgColor, getPnLBorderColor } from '@/lib/utils';
 import { useCreateTrade } from '@/lib/hooks/useTrades';
@@ -644,6 +644,14 @@ export default function DashboardPage() {
                 >
                   <Target className="w-4 h-4 mr-2" />
                   Goals & Challenges
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/dashboard/ai-insights')}
+                  className="w-full border-border text-foreground hover:bg-accent"
+                >
+                  <Brain className="w-4 h-4 mr-2" />
+                  AI Insights
                 </Button>
                 <TradeList 
                   selectedDate={selectedDate} 
