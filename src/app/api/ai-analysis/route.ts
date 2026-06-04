@@ -23,7 +23,7 @@ async function generateAIAnalysis(
   const { metrics, byStrategy, bySymbol, byDirection, monthly } = context;
 
   // Check if OpenAI API key is configured
-  const openaiApiKey = process.env.OPENAI_API_KEY;
+  const openaiApiKey = process.env.OPENAI_API_KEY_JOURNII;
   
   if (!openaiApiKey) {
     // Return a simulated analysis if no API key is configured
