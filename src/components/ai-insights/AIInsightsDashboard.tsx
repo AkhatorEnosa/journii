@@ -50,7 +50,9 @@ export function AIInsightsDashboard({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
+    <div className="min-h-screen bg-background">
+      <DashboardHeader />
+      <div className="h-full flex items-center justify-center py-12">
         <div className="text-center">
           <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
           <p className="text-muted-foreground">Analyzing your trades...</p>
@@ -59,6 +61,7 @@ export function AIInsightsDashboard({
           </p>
         </div>
       </div>
+    </div>
     );
   }
 

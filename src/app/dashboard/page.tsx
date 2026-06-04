@@ -414,6 +414,14 @@ export default function DashboardPage() {
         <div className="mb-6">
           <div className="flex items-center justify-end gap-2">
             <span className="text-sm text-muted-foreground mr-2 font-semibold">Period:</span>
+            <Button
+              variant="outline"
+              onClick={() => router.push('/dashboard/ai-insights')}
+              className="w-fit border border-[#d4af37] text-[#d4af37] bg-[#d4af37]/10 hover:bg-[#d4af37] hover:text-white dark:border-[#d4af37] dark:text-[#d4af37] dark:bg-[#d4af37]/10 dark:hover:bg-[#d4af37] dark:hover:text-background"
+            >
+              <Brain className="w-4 h-4 mr-2" />
+              AI Insights
+            </Button>
             {(['all', 'year', 'month', 'week'] as TimeFilter[]).map((filter) => (
               <Button
                 key={filter}
@@ -644,14 +652,6 @@ export default function DashboardPage() {
                 >
                   <Target className="w-4 h-4 mr-2" />
                   Goals & Challenges
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => router.push('/dashboard/ai-insights')}
-                  className="w-full border-border text-foreground hover:bg-accent"
-                >
-                  <Brain className="w-4 h-4 mr-2" />
-                  AI Insights
                 </Button>
                 <TradeList 
                   selectedDate={selectedDate} 
