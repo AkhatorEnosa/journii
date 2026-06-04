@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import DashboardHeader from '@/app/sections/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +39,15 @@ export function AIInsightsDashboard({
   onRefresh,
   lastUpdated,
 }: AIInsightsDashboardProps) {
+  const router = useRouter();
+  const { user, isLoaded } = useUser();
+
+  // Redirect to home if not authenticated
+  if (isLoaded && !user) {
+    router.push('/');
+    return null;
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -92,7 +104,9 @@ export function AIInsightsDashboard({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-background">
+      <DashboardHeader />
+      <div className="container mx-auto py-8 px-4 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -401,6 +415,7 @@ export function AIInsightsDashboard({
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   );
 }
