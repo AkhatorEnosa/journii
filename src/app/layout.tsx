@@ -111,9 +111,9 @@ export const metadata: Metadata = {
   },
 
   // Verification
-  verification: {
-    google: "Pa2S6hxKK6-LGDDy3Oz2Am6Fte06fUyvY9edbIMEzfs",
-  },
+  // verification: {
+  //   google: "Pa2S6hxKK6-LGDDy3Oz2Am6Fte06fUyvY9edbIMEzfs",
+  // },
 
 
   // Apple specific

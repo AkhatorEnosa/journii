@@ -21,8 +21,16 @@ import {
   Zap,
   ArrowUpRight,
   ArrowDownRight,
+  Sparkles,
+  Activity,
+  Award,
+  Lightbulb,
+  Shield,
 } from 'lucide-react';
+import { motion } from 'motion/react';
+import { FadeInUp } from '@/components/animations/FadeInUp';
 import type { AIAnalysisResponse, TradeMetrics } from '@/lib/ai-analysis';
+import Footer from '@/app/sections/Footer';
 
 interface AIInsightsDashboardProps {
   analysis: AIAnalysisResponse | null;
@@ -50,18 +58,39 @@ export function AIInsightsDashboard({
 
   if (isLoading) {
     return (
-    <div className="min-h-screen bg-background">
-      <DashboardHeader />
-      <div className="h-full flex items-center justify-center py-12">
-        <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Analyzing your trades...</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            This may take a moment as we process all your trading data
-          </p>
+      <div className="min-h-screen bg-linear-to-br from-background via-background to-muted/20">
+        <DashboardHeader />
+        <div className="container mx-auto py-16 px-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col items-center justify-center py-20"
+          >
+            <div className="relative mb-8">
+              <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping" />
+              <div className="relative w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                <Brain className="h-10 w-10 text-primary animate-pulse" />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Analyzing Your Trades</h2>
+            <p className="text-muted-foreground text-center max-w-md">
+              Our AI is processing your trading data to generate personalized insights and recommendations
+            </p>
+            <div className="mt-8 w-full max-w-md">
+              <div className="h-1 bg-muted rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-primary"
+                  initial={{ width: '0%' }}
+                  animate={{ width: '100%' }}
+                  transition={{ duration: 3, ease: 'easeInOut' }}
+                />
+              </div>
+            </div>
+          </motion.div>
         </div>
+        <Footer />
       </div>
-    </div>
     );
   }
 
@@ -72,26 +101,26 @@ export function AIInsightsDashboard({
   const getRiskColor = (level: string) => {
     switch (level) {
       case 'low':
-        return 'bg-green-500';
+        return 'text-green-500 bg-green-500/10';
       case 'medium':
-        return 'bg-yellow-500';
+        return 'text-yellow-500 bg-yellow-500/10';
       case 'high':
-        return 'bg-red-500';
+        return 'text-red-500 bg-red-500/10';
       default:
-        return 'bg-gray-500';
+        return 'text-gray-500 bg-gray-500/10';
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'bg-red-500/10 text-red-500 border-red-500';
+        return 'bg-red-500/10 text-red-500 border-red-500/30';
       case 'medium':
-        return 'bg-yellow-500/10 text-yellow-500 border-yellow-500';
+        return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30';
       case 'low':
-        return 'bg-green-500/10 text-green-500 border-green-500';
+        return 'bg-green-500/10 text-green-500 border-green-500/30';
       default:
-        return 'bg-gray-500/10 text-gray-500 border-gray-500';
+        return 'bg-gray-500/10 text-gray-500 border-gray-500/30';
     }
   };
 
@@ -107,318 +136,461 @@ export function AIInsightsDashboard({
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-linear-to-br from-background via-background to-muted/20">
       <DashboardHeader />
-      <div className="container mx-auto py-8 px-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">AI Trading Analysis</h2>
-          <p className="text-muted-foreground">
-            Expert insights and recommendations based on your trading history
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          {lastUpdated && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              <span>Updated {lastUpdated}</span>
-            </div>
-          )}
-          <Button onClick={onRefresh} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh Analysis
-          </Button>
-        </div>
-      </div>
-
-      {/* Overall Rating */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2">
-            <Star className="h-5 w-5 text-yellow-500" />
-            Overall Trading Performance
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-5xl font-bold">{analysis.overallRating}/10</div>
-              <p className="text-muted-foreground mt-2">{analysis.summary}</p>
-            </div>
-            <div className="flex gap-1">
-              {[...Array(10)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-6 w-6 ${
-                    i < analysis.overallRating
-                      ? 'text-yellow-500 fill-yellow-500'
-                      : 'text-gray-300'
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Key Metrics Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Win Rate</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics.winRate.toFixed(1)}%</div>
-            <div className="mt-2">
-              <Progress value={metrics.winRate} className="h-2" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {metrics.winningTrades} wins / {metrics.losingTrades} losses
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Profit Factor</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics.profitFactor.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              ${metrics.averageWin.toFixed(2)} avg win / ${metrics.averageLoss.toFixed(2)} avg loss
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total P&L</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${metrics.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              ${metrics.totalPnl.toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {metrics.totalTrades} total trades
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Current Streak</CardTitle>
-            <Brain className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {metrics.currentStreak.count} {metrics.currentStreak.type === 'win' ? 'W' : 'L'}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Best: {metrics.consecutiveWins}W | Worst: {metrics.consecutiveLosses}L
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Strengths and Weaknesses */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-600">
-              <CheckCircle className="h-5 w-5" />
-              Strengths
-            </CardTitle>
-            <CardDescription>What you're doing well</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              {analysis.strengths.map((strength, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
-                  <span className="text-sm">{strength}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-600">
-              <AlertTriangle className="h-5 w-5" />
-              Weaknesses
-            </CardTitle>
-            <CardDescription>Areas for improvement</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              {analysis.weaknesses.map((weakness, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
-                  <span className="text-sm">{weakness}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Patterns */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5" />
-            Detected Patterns
-          </CardTitle>
-          <CardDescription>Recurring themes in your trading</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {analysis.patterns.map((pattern, index) => (
-              <div key={index} className="flex items-start gap-4 p-4 rounded-lg bg-muted/50">
-                <div className="shrink-0">{getImpactIcon(pattern.impact)}</div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-semibold">{pattern.pattern}</h4>
-                    <Badge variant="outline" className="text-xs">
-                      {Math.round(pattern.confidence * 100)}% confidence
+      <div className="container mx-auto py-8 px-4 space-y-8">
+        {/* Hero Section with Overall Rating */}
+        <FadeInUp>
+          <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 p-8 md:p-12">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            
+            <div className="relative z-10">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg border-[#d4af37] text-[#d4af37] bg-[#d4af37]/10 dark:border-[#d4af37] dark:text-[#d4af37] dark:bg-[#d4af37]/10">
+                      <Brain className="h-5 w-5 text-[#d4af37] dark:text-[#d4af37]" />
+                    </div>
+                    <Badge variant="outline" className="border-[#d4af37] text-[#d4af37] bg-[#d4af37]/10 dark:border-[#d4af37] dark:text-[#d4af37] dark:bg-[#d4af37]/10">
+                      AI-Powered Analysis
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">{pattern.description}</p>
+                  
+                  <div>
+                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2">
+                      Trading Performance Score
+                    </h1>
+                    <p className="text-lg text-muted-foreground max-w-xl">
+                      {analysis.summary}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-4 pt-2">
+                    <Button onClick={onRefresh} variant="outline" size="sm" className="gap-2">
+                      <RefreshCw className="h-4 w-4" />
+                      Refresh Analysis
+                    </Button>
+                    {lastUpdated && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        <span>Updated {lastUpdated}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center md:items-end">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl" />
+                    <div className="relative flex gap-2 text-center p-6">
+                      <div className="text-7xl md:text-8xl font-bold tracking-tighter">
+                        {analysis.overallRating}
+                      </div>
+                      <div className="text-xl text-muted-foreground">/ 10</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-1 mt-4">
+                    {[...Array(10)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-5 w-5 transition-all ${
+                          i < analysis.overallRating
+                            ? 'text-yellow-500 fill-yellow-500 scale-110'
+                            : 'text-gray-300 dark:text-gray-600'
+                        }`}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </FadeInUp>
 
-      {/* Risk Assessment */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            Risk Assessment
-          </CardTitle>
-          <CardDescription>Evaluation of your risk management</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-start gap-4">
-            <div className={`shrink-0 w-3 h-3 rounded-full ${getRiskColor(analysis.riskAssessment.level)} mt-2`} />
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <h4 className="font-semibold capitalize">{analysis.riskAssessment.level} Risk</h4>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">{analysis.riskAssessment.description}</p>
-              <div className="space-y-2">
-                {analysis.riskAssessment.recommendations.map((rec, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
-                    <span>{rec}</span>
+        {/* Key Metrics Grid */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <FadeInUp delay={0.1}>
+            <Card className="hover:shadow-lg transition-shadow duration-300 border-0 bg-card/80 backdrop-blur-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Win Rate</CardTitle>
+                <div className="p-2 rounded-lg bg-green-500/10">
+                  <Target className="h-4 w-4 text-green-500" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold tracking-tight">{metrics.winRate.toFixed(1)}%</div>
+                <div className="mt-3">
+                  <Progress value={metrics.winRate} className="h-2" />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  <span className="text-green-500 font-medium">{metrics.winningTrades}</span> wins /{' '}
+                  <span className="text-red-500 font-medium">{metrics.losingTrades}</span> losses
+                </p>
+              </CardContent>
+            </Card>
+          </FadeInUp>
+
+          <FadeInUp delay={0.15}>
+            <Card className="hover:shadow-lg transition-shadow duration-300 border-0 bg-card/80 backdrop-blur-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Profit Factor</CardTitle>
+                <div className="p-2 rounded-lg bg-blue-500/10">
+                  <TrendingUp className="h-4 w-4 text-blue-500" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold tracking-tight">{metrics.profitFactor.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  ${metrics.averageWin.toFixed(2)} avg win / ${metrics.averageLoss.toFixed(2)} avg loss
+                </p>
+              </CardContent>
+            </Card>
+          </FadeInUp>
+
+          <FadeInUp delay={0.2}>
+            <Card className="hover:shadow-lg transition-shadow duration-300 border-0 bg-card/80 backdrop-blur-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total P&L</CardTitle>
+                <div className="p-2 rounded-lg bg-purple-500/10">
+                  <Zap className="h-4 w-4 text-purple-500" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className={`text-3xl font-bold tracking-tight ${metrics.totalPnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {metrics.totalPnl >= 0 ? '+' : ''}${metrics.totalPnl.toFixed(2)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {metrics.totalTrades} total trades analyzed
+                </p>
+              </CardContent>
+            </Card>
+          </FadeInUp>
+
+          <FadeInUp delay={0.25}>
+            <Card className="hover:shadow-lg transition-shadow duration-300 border-0 bg-card/80 backdrop-blur-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Current Streak</CardTitle>
+                <div className="p-2 rounded-lg bg-orange-500/10">
+                  <Activity className="h-4 w-4 text-orange-500" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold tracking-tight">
+                  <span className={metrics.currentStreak.type === 'win' ? 'text-green-500' : 'text-red-500'}>
+                    {metrics.currentStreak.count}
+                  </span>
+                  <span className="text-lg text-muted-foreground ml-1">
+                    {metrics.currentStreak.type === 'win' ? 'W' : 'L'}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Best: {metrics.consecutiveWins}W | Worst: {metrics.consecutiveLosses}L
+                </p>
+              </CardContent>
+            </Card>
+          </FadeInUp>
+        </div>
+
+        {/* Strengths and Weaknesses */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <FadeInUp delay={0.3}>
+            <Card className="h-full border-0 bg-card/80 backdrop-blur-sm shadow-lg">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-green-500/10">
+                    <Award className="h-5 w-5 text-green-500" />
                   </div>
+                  <div>
+                    <CardTitle className="text-green-500">Your Strengths</CardTitle>
+                    <CardDescription>What you're doing exceptionally well</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3">
+                  {analysis.strengths.map((strength, index) => (
+                    <motion.li
+                      key={index}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 * index }}
+                      className="flex items-start gap-3 p-3 rounded-lg bg-green-500/5 border border-green-500/10"
+                    >
+                      <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                      <span className="text-sm">{strength}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </FadeInUp>
+
+          <FadeInUp delay={0.35}>
+            <Card className="h-full border-0 bg-card/80 backdrop-blur-sm shadow-lg">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-orange-500/10">
+                    <Lightbulb className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-orange-500">Areas for Improvement</CardTitle>
+                    <CardDescription>Opportunities to enhance your trading</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3">
+                  {analysis.weaknesses.map((weakness, index) => (
+                    <motion.li
+                      key={index}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 * index }}
+                      className="flex items-start gap-3 p-3 rounded-lg bg-orange-500/5 border border-orange-500/10"
+                    >
+                      <AlertTriangle className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
+                      <span className="text-sm">{weakness}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </FadeInUp>
+        </div>
+
+        {/* Detected Patterns */}
+        <FadeInUp delay={0.4}>
+          <Card className="border-0 bg-card/80 backdrop-blur-sm shadow-lg">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-blue-500/10">
+                  <Brain className="h-5 w-5 text-blue-500" />
+                </div>
+                <div>
+                  <CardTitle>Detected Patterns</CardTitle>
+                  <CardDescription>Recurring themes identified in your trading behavior</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {analysis.patterns.map((pattern, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 * index }}
+                    className="flex items-start gap-4 p-4 rounded-xl bg-muted/30 border border-border/50 hover:border-primary/30 transition-colors"
+                  >
+                    <div className="shrink-0 mt-1">{getImpactIcon(pattern.impact)}</div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2 flex-wrap">
+                        <h4 className="font-semibold">{pattern.pattern}</h4>
+                        <Badge variant="outline" className="text-xs border-primary/30 text-primary">
+                          {Math.round(pattern.confidence * 100)}% confidence
+                        </Badge>
+                        {pattern.impact === 'positive' && (
+                          <Badge className="text-xs bg-green-500/10 text-green-500 border-green-500/30">
+                            Positive Impact
+                          </Badge>
+                        )}
+                        {pattern.impact === 'negative' && (
+                          <Badge className="text-xs bg-red-500/10 text-red-500 border-red-500/30">
+                            Negative Impact
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">{pattern.description}</p>
+                    </div>
+                  </motion.div>
                 ))}
               </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </FadeInUp>
 
-      {/* Action Plan */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Action Plan
-          </CardTitle>
-          <CardDescription>Specific steps to improve your trading</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {analysis.actionPlan.map((action, index) => (
-              <div
-                key={index}
-                className={`p-4 rounded-lg border ${getPriorityColor(action.priority)}`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="shrink-0 flex items-center justify-center w-6 h-6 rounded-full border currentColor">
-                    <span className="text-xs font-bold">{index + 1}</span>
+        {/* Risk Assessment */}
+        <FadeInUp delay={0.45}>
+          <Card className="border-0 bg-card/80 backdrop-blur-sm shadow-lg">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${getRiskColor(analysis.riskAssessment.level)}`}>
+                  <Shield className="h-5 w-5" />
+                </div>
+                <div>
+                  <CardTitle>Risk Assessment</CardTitle>
+                  <CardDescription>Evaluation of your risk management practices</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-start gap-6">
+                <div className={`shrink-0 w-4 h-4 rounded-full ${
+                  analysis.riskAssessment.level === 'low' ? 'bg-green-500' :
+                  analysis.riskAssessment.level === 'medium' ? 'bg-yellow-500' : 'bg-red-500'
+                } mt-1.5 animate-pulse`} />
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <h4 className="font-semibold text-lg capitalize">{analysis.riskAssessment.level} Risk Level</h4>
+                    <Badge className={`${getRiskColor(analysis.riskAssessment.level)} border-0`}>
+                      {analysis.riskAssessment.level === 'low' ? 'Well Managed' :
+                       analysis.riskAssessment.level === 'medium' ? 'Needs Attention' : 'Critical'}
+                    </Badge>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-semibold">{action.step}</h4>
-                      <Badge variant="outline" className={`text-xs ${getPriorityColor(action.priority)}`}>
-                        {action.priority} priority
-                      </Badge>
-                    </div>
-                    <p className="text-sm opacity-90">{action.description}</p>
+                  <p className="text-sm text-muted-foreground mb-6">{analysis.riskAssessment.description}</p>
+                  <div className="space-y-2">
+                    <h5 className="font-medium text-sm mb-3">Recommendations:</h5>
+                    {analysis.riskAssessment.recommendations.map((rec, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.05 * index }}
+                        className="flex items-center gap-3 text-sm p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                          {index + 1}
+                        </div>
+                        <span>{rec}</span>
+                      </motion.div>
+                    ))}
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </FadeInUp>
 
-      {/* Trends */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {analysis.trends.improving ? (
-              <TrendingUp className="h-5 w-5 text-green-500" />
-            ) : (
-              <TrendingDown className="h-5 w-5 text-red-500" />
-            )}
-            Performance Trends
-          </CardTitle>
-          <CardDescription>Direction of your trading performance</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <div className={`shrink-0 px-4 py-2 rounded-full ${
-              analysis.trends.improving ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
-            }`}>
-              {analysis.trends.improving ? (
-                <TrendingUp className="h-6 w-6" />
-              ) : (
-                <TrendingDown className="h-6 w-6" />
-              )}
-            </div>
-            <div>
-              <p className="font-semibold">
-                {analysis.trends.improving ? 'Improving' : 'Needs Attention'}
-              </p>
-              <p className="text-sm text-muted-foreground">{analysis.trends.description}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Action Plan */}
+        <FadeInUp delay={0.5}>
+          <Card className="border-0 bg-card/80 backdrop-blur-sm shadow-lg">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Target className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle>Action Plan</CardTitle>
+                  <CardDescription>Specific steps to improve your trading performance</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {analysis.actionPlan.map((action, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 * index }}
+                    className={`p-4 rounded-xl border-2 ${getPriorityColor(action.priority)} transition-all hover:shadow-md`}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full border-2 currentColor font-bold text-sm">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
+                          <h4 className="font-semibold">{action.step}</h4>
+                          <Badge variant="outline" className={`${getPriorityColor(action.priority)} text-xs`}>
+                            {action.priority} priority
+                          </Badge>
+                        </div>
+                        <p className="text-sm opacity-90">{action.description}</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </FadeInUp>
 
-      {/* Psychological Insights */}
-      {analysis.psychologicalInsights && analysis.psychologicalInsights.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5" />
-              Psychological Insights
-            </CardTitle>
-            <CardDescription>Mental and emotional aspects of your trading</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              {analysis.psychologicalInsights.map((insight, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <Brain className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
-                  <span className="text-sm">{insight}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
+        {/* Performance Trends */}
+        <FadeInUp delay={0.55}>
+          <Card className="border-0 bg-card/80 backdrop-blur-sm shadow-lg">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${
+                  analysis.trends.improving ? 'bg-green-500/10' : 'bg-red-500/10'
+                }`}>
+                  {analysis.trends.improving ? (
+                    <TrendingUp className={`h-5 w-5 ${analysis.trends.improving ? 'text-green-500' : 'text-red-500'}`} />
+                  ) : (
+                    <TrendingDown className="h-5 w-5 text-red-500" />
+                  )}
+                </div>
+                <div>
+                  <CardTitle>Performance Trends</CardTitle>
+                  <CardDescription>Direction of your trading performance over time</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-6">
+                <div className={`shrink-0 p-4 rounded-2xl ${
+                  analysis.trends.improving ? 'bg-green-500/10' : 'bg-red-500/10'
+                }`}>
+                  {analysis.trends.improving ? (
+                    <TrendingUp className="h-10 w-10 text-green-500" />
+                  ) : (
+                    <TrendingDown className="h-10 w-10 text-red-500" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <Badge className={`${
+                      analysis.trends.improving 
+                        ? 'bg-green-500/10 text-green-500 border-green-500/30' 
+                        : 'bg-red-500/10 text-red-500 border-red-500/30'
+                    }`}>
+                      {analysis.trends.improving ? 'Improving' : 'Needs Attention'}
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground">{analysis.trends.description}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </FadeInUp>
+
+        {/* Psychological Insights */}
+        {analysis.psychologicalInsights && analysis.psychologicalInsights.length > 0 && (
+          <FadeInUp delay={0.6}>
+            <Card className="border-0 bg-card/80 backdrop-blur-sm shadow-lg">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-500/10">
+                    <Brain className="h-5 w-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <CardTitle>Psychological Insights</CardTitle>
+                    <CardDescription>Mental and emotional aspects of your trading behavior</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {analysis.psychologicalInsights.map((insight, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.05 * index }}
+                      className="flex items-start gap-3 p-4 rounded-xl bg-purple-500/5 border border-purple-500/10"
+                    >
+                      <Brain className="h-5 w-5 text-purple-500 shrink-0 mt-0.5" />
+                      <span className="text-sm">{insight}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </FadeInUp>
+        )}
       </div>
+      <Footer />
     </div>
   );
 }
