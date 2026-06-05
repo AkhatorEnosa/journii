@@ -177,7 +177,7 @@ export default function GoalsSection() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Target className="w-6 h-6" />
@@ -187,7 +187,7 @@ export default function GoalsSection() {
             Set targets and track your trading progress
           </p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+        <Button onClick={() => setIsModalOpen(true)} className="gap-2 mt-5 md:mt-0 w-fit">
           <Plus className="w-4 h-4" />
           New Goal
         </Button>

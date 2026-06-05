@@ -33,7 +33,7 @@ export default function GoalsPage() {
     <>
         <DashboardHeader />
         <div className='container mx-auto px-4'>
-            <Button variant="ghost" onClick={() => router.push('/dashboard')} className="py-8 mt-10 text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" onClick={() => router.push('/dashboard')} className="py-8 md:mt-10 text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Dashboard
             </Button>

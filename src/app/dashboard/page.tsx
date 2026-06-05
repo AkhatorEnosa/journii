@@ -410,9 +410,9 @@ export default function DashboardPage() {
           </Card>
         )}
 
-        {/* Time Filter */}
-        <div className="mb-6">
-          <div className="flex items-center justify-end gap-2">
+        {/* AI button & Time Filter */}
+        <div className="w-full mb-6">
+          <div className="w-full flex items-center justify-normal overflow-scroll md:justify-end gap-2">
             <span className="text-sm text-muted-foreground mr-2 font-semibold">Period:</span>
             <Button
               variant="outline"
@@ -556,9 +556,7 @@ export default function DashboardPage() {
                     {/* Week Days Header */}
                     <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground font-medium">
                       {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                        <div key={day} className="p-2">
-                          {day}
-                        </div>
+                        <div key={day} className="p-2 border rounded-full">{day}</div>
                       ))}
                     </div>
 
@@ -573,7 +571,7 @@ export default function DashboardPage() {
                         return (
                           <div
                             key={index}
-                            className={`min-h-20 p-2 border border-border rounded-sm cursor-pointer transition-colors hover:bg-accent 
+                            className={`min-h-20 p-1 md:p-2 wrap-break-word border border-border rounded-lg cursor-pointer transition-colors hover:bg-accent 
                               ${!isCurrentMonth ? 'opacity-50' : ''} 
                               ${isToday && !dailyTotal ? 'ring-2 ring-primary' : ''}
                               ${dailyTotal ? `${getPnLBgColor(dailyTotal.totalPnl)} ${getPnLBorderColor(dailyTotal.totalPnl)}` : ''}
@@ -583,11 +581,13 @@ export default function DashboardPage() {
                             <div className={`text-right text-xs ${
                               isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'
                             } ${isWeekend ? 'font-medium' : ''}`}>
-                              {day.getDate()}
+                              <span className='bg-background dark:bg-foreground px-1 rounded'>
+                                {day.getDate()}
+                              </span>
                             </div>
                             {dailyTotal && (
-                              <div className="text-center space-y-1">
-                                <div className={`text-xs font-bold ${getPnLColor(dailyTotal.totalPnl)}`}>
+                              <div className="md:text-center space-y-1">
+                                <div className={`text-xs font-bold ${getPnLColor(dailyTotal.totalPnl)} line-clamp-1`}>
                                   {formatPnL(dailyTotal.totalPnl)}
                                 </div>
                                 <div className="text-xs text-muted-foreground">

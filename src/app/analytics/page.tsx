@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, TrendingUp, DollarSign, Target, Calendar } from 'lucide-react';
+import { ArrowLeft, TrendingUp, DollarSign, Target, Calendar, Activity, Award, TrendingDown, Zap } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useUser } from '@clerk/nextjs';
 import { formatPnL, getPnLColor } from '@/lib/utils';
@@ -19,14 +19,20 @@ export default function AnalyticsPage() {
   const { user, isLoaded, isSignedIn } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d' | 'all'>('all');
+  const [streakData, setStreakData] = useState({
+    current: { type: 'win' as 'win' | 'loss', count: 0 },
+    best: { type: 'win' as 'win' | 'loss', count: 0 },
+    worst: { type: 'loss' as 'win' | 'loss', count: 0 },
+  });
   const [data, setData] = useState({
     dailyPnL: [] as { date: string; pnl: number }[],
     cumulativePnL: [] as { date: string; cumulative: number }[],
-    symbolPerformance: [] as { symbol: string; totalPnl: number; count: number }[],
+    symbolPerformance: [] as { symbol: string; totalPnl: number; count: number; wins: number; winRate: number }[],
     directionPerformance: [] as { direction: string; totalPnl: number; count: number; wins: number; winRate: number }[],
     winRateByDay: [] as { day: string; winRate: number }[],
     topSymbols: [] as { symbol: string; totalPnl: number; count: number }[],
     filteredTrades: [] as { pnl: number }[],
+    winRateBySymbol: [] as { symbol: string; winRate: number; count: number }[],
   });
 
   // Redirect to home page if not authenticated
@@ -97,16 +103,26 @@ export default function AnalyticsPage() {
       const symbolMap = new Map();
       filteredTradesData.forEach(trade => {
         if (!symbolMap.has(trade.symbol)) {
-          symbolMap.set(trade.symbol, { symbol: trade.symbol, totalPnl: 0, count: 0 });
+          symbolMap.set(trade.symbol, { symbol: trade.symbol, totalPnl: 0, count: 0, wins: 0 });
         }
         const data = symbolMap.get(trade.symbol);
         data.totalPnl += trade.pnl;
         data.count += 1;
+        if (trade.pnl > 0) data.wins += 1;
         data.totalPnl = Math.round(data.totalPnl * 100) / 100;
       });
 
-      const symbolPerformance = Array.from(symbolMap.values())
-        .sort((a, b) => b.totalPnl - a.totalPnl);
+      const symbolPerformance = Array.from(symbolMap.values()).map(d => ({
+        ...d,
+        winRate: d.count > 0 ? Math.round((d.wins / d.count) * 100) : 0,
+      })).sort((a, b) => b.totalPnl - a.totalPnl);
+
+      // Win Rate by Symbol
+      const winRateBySymbol = [...symbolPerformance].map(s => ({
+        symbol: s.symbol,
+        winRate: s.winRate,
+        count: s.count,
+      })).sort((a, b) => b.winRate - a.winRate);
 
       // Direction Performance
       const directionMap = new Map();
@@ -151,6 +167,47 @@ export default function AnalyticsPage() {
       // Calculate filtered trades for PnL distribution
       const filteredTradesForPnL = filteredTradesData.map(t => ({ pnl: t.pnl }));
 
+      // Sort trades chronologically for streak calculation
+      const sortedTrades = [...filteredTradesData].sort((a, b) => 
+        new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+
+      // Calculate streaks
+      let currentStreak = { type: 'win' as 'win' | 'loss', count: 0 };
+      let bestStreak = { type: 'win' as 'win' | 'loss', count: 0 };
+      let worstStreak = { type: 'win' as 'win' | 'loss', count: 0 };
+      let currentWinStreak = 0;
+      let currentLossStreak = 0;
+
+      sortedTrades.forEach(trade => {
+        if (trade.pnl > 0) {
+          currentWinStreak++;
+          currentLossStreak = 0;
+          if (currentWinStreak > bestStreak.count) {
+            bestStreak = { type: 'win', count: currentWinStreak };
+          }
+        } else if (trade.pnl < 0) {
+          currentLossStreak++;
+          currentWinStreak = 0;
+          if (currentLossStreak > worstStreak.count) {
+            worstStreak = { type: 'loss', count: currentLossStreak };
+          }
+        } else {
+          // Break-even trade breaks streaks
+          currentWinStreak = 0;
+          currentLossStreak = 0;
+        }
+      });
+
+      // Set current streak
+      const lastTrade = sortedTrades[sortedTrades.length - 1];
+      if (lastTrade) {
+        currentStreak = {
+          type: lastTrade.pnl >= 0 ? 'win' : 'loss',
+          count: lastTrade.pnl >= 0 ? currentWinStreak : currentLossStreak,
+        };
+      }
+
       setData({
         dailyPnL,
         cumulativePnL,
@@ -159,7 +216,11 @@ export default function AnalyticsPage() {
         winRateByDay,
         topSymbols,
         filteredTrades: filteredTradesForPnL,
+        winRateBySymbol,
       });
+
+      // Store streak data in state
+      setStreakData({ current: currentStreak, best: bestStreak, worst: worstStreak });
     } catch (err) {
       console.error('Failed to load analytics data:', err);
     } finally {
@@ -225,6 +286,46 @@ export default function AnalyticsPage() {
   const totalWins = data.filteredTrades.filter(t => t.pnl > 0).length;
   const winRate = totalTrades > 0 ? Math.round((totalWins / totalTrades) * 100) : 0;
 
+  // Calculate advanced metrics
+  const winningTrades = data.filteredTrades.filter(t => t.pnl > 0);
+  const losingTrades = data.filteredTrades.filter(t => t.pnl < 0);
+  
+  const totalProfit = winningTrades.reduce((sum, t) => sum + t.pnl, 0);
+  const totalLoss = Math.abs(losingTrades.reduce((sum, t) => sum + t.pnl, 0));
+  
+  const averageWin = winningTrades.length > 0 ? totalProfit / winningTrades.length : 0;
+  const averageLoss = losingTrades.length > 0 ? totalLoss / losingTrades.length : 0;
+  
+  const profitFactor = totalLoss > 0 ? totalProfit / totalLoss : totalProfit > 0 ? Infinity : 0;
+  const averageWinLossRatio = averageLoss > 0 ? averageWin / averageLoss : averageWin > 0 ? Infinity : 0;
+  
+  const pnlValues = data.filteredTrades.map(t => t.pnl);
+  const bestTrade = pnlValues.length > 0 ? Math.max(...pnlValues) : 0;
+  const worstTrade = pnlValues.length > 0 ? Math.min(...pnlValues) : 0;
+
+  // Calculate PnL distribution for histogram
+  const pnlDistribution = useMemo(() => {
+    if (data.filteredTrades.length === 0) return [];
+    
+    const ranges = [
+      { label: '< -$100', min: -Infinity, max: -100, count: 0 },
+      { label: '-$100 to -$50', min: -100, max: -50, count: 0 },
+      { label: '-$50 to -$25', min: -50, max: -25, count: 0 },
+      { label: '-$25 to $0', min: -25, max: 0, count: 0 },
+      { label: '$0 to $25', min: 0, max: 25, count: 0 },
+      { label: '$25 to $50', min: 25, max: 50, count: 0 },
+      { label: '$50 to $100', min: 50, max: 100, count: 0 },
+      { label: '> $100', min: 100, max: Infinity, count: 0 },
+    ];
+
+    data.filteredTrades.forEach(trade => {
+      const range = ranges.find(r => trade.pnl >= r.min && trade.pnl < r.max);
+      if (range) range.count++;
+    });
+
+    return ranges;
+  }, [data.filteredTrades]);
+
   // Show loading state while checking authentication
   if (!isLoaded) {
     return (
@@ -248,21 +349,21 @@ export default function AnalyticsPage() {
       }
       <DashboardHeader />
       <div className='container mx-auto px-4'>
-        <Button variant="ghost" onClick={() => router.push('/dashboard')} className="py-8 mt-10 text-muted-foreground hover:text-foreground">
+        <Button variant="ghost" onClick={() => router.push('/dashboard')} className="py-8 lg:mt-10 text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
       </div>
       {/* Header */}
-      <header className="py-4 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-30">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="md:py-4 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-30">
+        <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center justify-between">
           <div className="flex items-center gap-4">
             <div>
               <h1 className="text-xl font-bold text-foreground">Analytics</h1>
               <p className="text-sm text-muted-foreground">Track your trading performance</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 mt-4 md:mt-0">
             <Button
               variant={timeframe === 'all' ? 'default' : 'outline'}
               onClick={() => setTimeframe('all')}
@@ -296,7 +397,7 @@ export default function AnalyticsPage() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Summary Stats */}
+        {/* Summary Stats - Row 1 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
@@ -350,6 +451,73 @@ export default function AnalyticsPage() {
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">Per trade average</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Summary Stats - Row 2 (Advanced Metrics) */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-2">
+              <CardDescription className="text-muted-foreground">Profit Factor</CardDescription>
+              <CardTitle className={`text-2xl font-bold ${profitFactor >= 2 ? 'text-green-500' : profitFactor >= 1 ? 'text-yellow-500' : 'text-red-500'}`}>
+                {profitFactor === Infinity ? '∞' : profitFactor.toFixed(2)}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Award className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Gross profit/loss ratio</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-2">
+              <CardDescription className="text-muted-foreground">Avg Win / Avg Loss</CardDescription>
+              <CardTitle className="text-2xl font-bold">
+                <span className="text-green-500">{formatPnL(averageWin)}</span>
+                <span className="text-muted-foreground mx-1">/</span>
+                <span className="text-red-500">{formatPnL(-averageLoss)}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Risk-reward ratio: {averageWinLossRatio === Infinity ? '∞' : averageWinLossRatio.toFixed(2)}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-2">
+              <CardDescription className="text-muted-foreground">Best / Worst Trade</CardDescription>
+              <CardTitle className="text-2xl font-bold">
+                <span className="text-green-500">{formatPnL(bestTrade)}</span>
+                <span className="text-muted-foreground mx-1">/</span>
+                <span className="text-red-500">{formatPnL(worstTrade)}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Trade extremes</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-2">
+              <CardDescription className="text-muted-foreground">Current Streak</CardDescription>
+              <CardTitle className={`text-2xl font-bold ${streakData.current.type === 'win' ? 'text-green-500' : 'text-red-500'}`}>
+                {streakData.current.count} {streakData.current.type === 'win' ? 'W' : 'L'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Best: {streakData.best.count}W | Worst: {streakData.worst.count}L</span>
               </div>
             </CardContent>
           </Card>
@@ -519,6 +687,89 @@ export default function AnalyticsPage() {
             description="Breakdown of profits and losses"
           />
         </div>
+
+        {/* PnL Distribution Histogram */}
+        <Card className="bg-card border-border mb-8">
+          <CardHeader>
+            <CardTitle className="text-foreground">PnL Distribution</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Frequency of trades by profit/loss ranges
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={pnlDistribution}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                  <XAxis dataKey="label" stroke="var(--color-muted-foreground)" fontSize={10} angle={-45} textAnchor="end" height={60} />
+                  <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
+                  <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'var(--color-card)',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: '8px',
+                        color: 'var(--color-foreground)',
+                      }}
+                      labelStyle={{ color: 'var(--color-foreground)' }}
+                      itemStyle={{ color: 'var(--color-muted-foreground)' }}
+                      cursor={{ fill: 'var(--color-border)', opacity: 0.2 }}
+                    formatter={(value) => [value, 'Trades']}
+                  />
+                  <Bar
+                    dataKey="count"
+                    radius={[4, 4, 0, 0]}
+                  >
+                    {pnlDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.count > 0 ? (entry.min >= 0 ? 'var(--color-positive)' : 'var(--color-negative)') : 'var(--color-muted)'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Win Rate by Symbol */}
+        <Card className="bg-card border-border mb-8">
+          <CardHeader>
+            <CardTitle className="text-foreground">Win Rate by Symbol</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Success rate for each trading instrument
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data.winRateBySymbol.slice(0, 10)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                  <XAxis dataKey="symbol" stroke="var(--color-muted-foreground)" fontSize={12} style={{ textTransform: 'uppercase' }} />
+                  <YAxis stroke="var(--color-muted-foreground)" fontSize={12} domain={[0, 100]} unit="%" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'var(--color-card)',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: '8px',
+                      color: 'var(--color-foreground)',
+                    }}
+                    labelStyle={{ color: 'var(--color-foreground)', textTransform: 'uppercase' }}
+                    itemStyle={{ color: 'var(--color-muted-foreground)' }}
+                    cursor={{ fill: 'var(--color-border)', opacity: 0.2 }}
+                    formatter={(value) => [`${value}%`, 'Win Rate']}
+                  />
+                  <Bar
+                    dataKey="winRate"
+                    radius={[4, 4, 0, 0]}
+                    name="Win Rate"
+                  >
+                    {data.winRateBySymbol.slice(0, 10).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.winRate >= 50 ? 'var(--color-positive)' : 'var(--color-negative)'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Bottom Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

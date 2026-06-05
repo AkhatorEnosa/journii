@@ -191,32 +191,34 @@ const DashboardHeader = () => {
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
-    <header className={`border-b border-border z-50 ${pathname !== '/dashboard' ? 'sticky top-0 bg-background/95 backdrop-blur-sm' : 'bg-transparent'}`}>
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 group"
-            aria-label="TradrJourney Home"
-          >
-            <img
-              src={Logo.src}
-              alt="TradrJourney Logo"
-              className="w-16 h-auto transition-all duration-300 dark:invert opacity-95 group-hover:opacity-100"
+    <>
+      <header className={`border-b border-border z-50 ${pathname !== '/dashboard' ? 'sticky top-0 bg-background/95 backdrop-blur-sm' : 'bg-transparent'}`}>
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2 group"
+              aria-label="TradrJourney Home"
+            >
+              <img
+                src={Logo.src}
+                alt="TradrJourney Logo"
+                className="w-16 h-auto transition-all duration-300 dark:invert opacity-95 group-hover:opacity-100"
+              />
+            </Link>
+
+            {/* Desktop Navigation */}
+            <DesktopNav pathname={pathname} />
+
+            {/* Mobile Menu Button */}
+            <MobileMenuButton
+              isOpen={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             />
-          </Link>
-
-          {/* Desktop Navigation */}
-          <DesktopNav pathname={pathname} />
-
-          {/* Mobile Menu Button */}
-          <MobileMenuButton
-            isOpen={mobileMenuOpen}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          />
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* Mobile Navigation Menu */}
       <AnimatePresence>
@@ -251,7 +253,7 @@ const DashboardHeader = () => {
           </>
         )}
       </AnimatePresence>
-    </header>
+    </>
   );
 };
 
