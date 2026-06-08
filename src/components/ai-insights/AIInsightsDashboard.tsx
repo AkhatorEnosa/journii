@@ -58,7 +58,7 @@ export function AIInsightsDashboard({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-background via-background to-muted/20">
+      <div className="min-h-screen flex flex-col justify-between bg-linear-to-br from-background via-background to-muted/20">
         <DashboardHeader />
         <div className="container mx-auto py-16 px-4">
           <motion.div
@@ -101,11 +101,11 @@ export function AIInsightsDashboard({
   const getRiskColor = (level: string) => {
     switch (level) {
       case 'low':
-        return 'text-green-500 bg-green-500/10';
+        return 'text-emerald-500 bg-green-500/10';
       case 'medium':
         return 'text-yellow-500 bg-yellow-500/10';
       case 'high':
-        return 'text-red-500 bg-red-500/10';
+        return 'text-rose-500 bg-red-500/10';
       default:
         return 'text-gray-500 bg-gray-500/10';
     }
@@ -114,11 +114,11 @@ export function AIInsightsDashboard({
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'bg-red-500/10 text-red-500 border-red-500/30';
+        return 'bg-red-500/10 text-rose-500 border-red-500/30';
       case 'medium':
         return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30';
       case 'low':
-        return 'bg-green-500/10 text-green-500 border-green-500/30';
+        return 'bg-green-500/10 text-emerald-500 border-green-500/30';
       default:
         return 'bg-gray-500/10 text-gray-500 border-gray-500/30';
     }
@@ -127,9 +127,9 @@ export function AIInsightsDashboard({
   const getImpactIcon = (impact: string) => {
     switch (impact) {
       case 'positive':
-        return <ArrowUpRight className="h-4 w-4 text-green-500" />;
+        return <ArrowUpRight className="h-4 w-4 text-emerald-500" />;
       case 'negative':
-        return <ArrowDownRight className="h-4 w-4 text-red-500" />;
+        return <ArrowDownRight className="h-4 w-4 text-rose-500" />;
       default:
         return <TrendingUp className="h-4 w-4 text-gray-500" />;
     }
@@ -215,7 +215,7 @@ export function AIInsightsDashboard({
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Win Rate</CardTitle>
                 <div className="p-2 rounded-lg bg-green-500/10">
-                  <Target className="h-4 w-4 text-green-500" />
+                  <Target className="h-4 w-4 text-emerald-500" />
                 </div>
               </CardHeader>
               <CardContent>
@@ -224,8 +224,8 @@ export function AIInsightsDashboard({
                   <Progress value={metrics.winRate} className="h-2" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  <span className="text-green-500 font-medium">{metrics.winningTrades}</span> wins /{' '}
-                  <span className="text-red-500 font-medium">{metrics.losingTrades}</span> losses
+                  <span className="text-emerald-500 font-medium">{metrics.winningTrades}</span> wins /{' '}
+                  <span className="text-rose-500 font-medium">{metrics.losingTrades}</span> losses
                 </p>
               </CardContent>
             </Card>
@@ -257,7 +257,7 @@ export function AIInsightsDashboard({
                 </div>
               </CardHeader>
               <CardContent>
-                <div className={`text-3xl font-bold tracking-tight ${metrics.totalPnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                <div className={`text-3xl font-bold tracking-tight ${metrics.totalPnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                   {metrics.totalPnl >= 0 ? '+' : ''}${metrics.totalPnl.toFixed(2)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
@@ -277,7 +277,7 @@ export function AIInsightsDashboard({
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold tracking-tight">
-                  <span className={metrics.currentStreak.type === 'win' ? 'text-green-500' : 'text-red-500'}>
+                  <span className={metrics.currentStreak.type === 'win' ? 'text-emerald-500' : 'text-rose-500'}>
                     {metrics.currentStreak.count}
                   </span>
                   <span className="text-lg text-muted-foreground ml-1">
@@ -299,10 +299,10 @@ export function AIInsightsDashboard({
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-green-500/10">
-                    <Award className="h-5 w-5 text-green-500" />
+                    <Award className="h-5 w-5 text-emerald-500" />
                   </div>
                   <div>
-                    <CardTitle className="text-green-500">Your Strengths</CardTitle>
+                    <CardTitle className="text-emerald-500">Your Strengths</CardTitle>
                     <CardDescription>What you're doing exceptionally well</CardDescription>
                   </div>
                 </div>
@@ -317,7 +317,7 @@ export function AIInsightsDashboard({
                       transition={{ delay: 0.1 * index }}
                       className="flex items-start gap-3 p-3 rounded-lg bg-green-500/5 border border-green-500/10"
                     >
-                      <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                      <CheckCircle className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
                       <span className="text-sm">{strength}</span>
                     </motion.li>
                   ))}
@@ -391,12 +391,12 @@ export function AIInsightsDashboard({
                           {Math.round(pattern.confidence * 100)}% confidence
                         </Badge>
                         {pattern.impact === 'positive' && (
-                          <Badge className="text-xs bg-green-500/10 text-green-500 border-green-500/30">
+                          <Badge className="text-xs bg-green-500/10 text-emerald-500 border-green-500/30">
                             Positive Impact
                           </Badge>
                         )}
                         {pattern.impact === 'negative' && (
-                          <Badge className="text-xs bg-red-500/10 text-red-500 border-red-500/30">
+                          <Badge className="text-xs bg-red-500/10 text-rose-500 border-red-500/30">
                             Negative Impact
                           </Badge>
                         )}
@@ -516,9 +516,9 @@ export function AIInsightsDashboard({
                   analysis.trends.improving ? 'bg-green-500/10' : 'bg-red-500/10'
                 }`}>
                   {analysis.trends.improving ? (
-                    <TrendingUp className={`h-5 w-5 ${analysis.trends.improving ? 'text-green-500' : 'text-red-500'}`} />
+                    <TrendingUp className={`h-5 w-5 ${analysis.trends.improving ? 'text-emerald-500' : 'text-rose-500'}`} />
                   ) : (
-                    <TrendingDown className="h-5 w-5 text-red-500" />
+                    <TrendingDown className="h-5 w-5 text-rose-500" />
                   )}
                 </div>
                 <div>
@@ -533,17 +533,17 @@ export function AIInsightsDashboard({
                   analysis.trends.improving ? 'bg-green-500/10' : 'bg-red-500/10'
                 }`}>
                   {analysis.trends.improving ? (
-                    <TrendingUp className="h-10 w-10 text-green-500" />
+                    <TrendingUp className="h-10 w-10 text-emerald-500" />
                   ) : (
-                    <TrendingDown className="h-10 w-10 text-red-500" />
+                    <TrendingDown className="h-10 w-10 text-rose-500" />
                   )}
                 </div>
                 <div>
                   <div className="flex items-center gap-3 mb-2">
                     <Badge className={`${
                       analysis.trends.improving 
-                        ? 'bg-green-500/10 text-green-500 border-green-500/30' 
-                        : 'bg-red-500/10 text-red-500 border-red-500/30'
+                        ? 'bg-green-500/10 text-emerald-500 border-green-500/30' 
+                        : 'bg-red-500/10 text-rose-500 border-red-500/30'
                     }`}>
                       {analysis.trends.improving ? 'Improving' : 'Needs Attention'}
                     </Badge>

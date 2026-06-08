@@ -477,9 +477,9 @@ export default function AnalyticsPage() {
             <CardHeader className="pb-2">
               <CardDescription className="text-muted-foreground">Avg Win / Avg Loss</CardDescription>
               <CardTitle className="text-2xl font-bold">
-                <span className="text-green-500">{formatPnL(averageWin)}</span>
+                <span className={`${getPnLColor(averageWin)}`}>{formatPnL(averageWin)}</span>
                 <span className="text-muted-foreground mx-1">/</span>
-                <span className="text-red-500">{formatPnL(-averageLoss)}</span>
+                <span className={`${getPnLColor(-averageLoss)}`}>{formatPnL(-averageLoss)}</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -494,9 +494,9 @@ export default function AnalyticsPage() {
             <CardHeader className="pb-2">
               <CardDescription className="text-muted-foreground">Best / Worst Trade</CardDescription>
               <CardTitle className="text-2xl font-bold">
-                <span className="text-green-500">{formatPnL(bestTrade)}</span>
+                <span className={`${getPnLColor(bestTrade)}`}>{formatPnL(bestTrade)}</span>
                 <span className="text-muted-foreground mx-1">/</span>
-                <span className="text-red-500">{formatPnL(worstTrade)}</span>
+                <span className={`${getPnLColor(worstTrade)}`}>{formatPnL(worstTrade)}</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -510,7 +510,7 @@ export default function AnalyticsPage() {
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
               <CardDescription className="text-muted-foreground">Current Streak</CardDescription>
-              <CardTitle className={`text-2xl font-bold ${streakData.current.type === 'win' ? 'text-green-500' : 'text-red-500'}`}>
+              <CardTitle className={`text-2xl font-bold ${streakData.current.type === 'win' ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {streakData.current.count} {streakData.current.type === 'win' ? 'W' : 'L'}
               </CardTitle>
             </CardHeader>
