@@ -581,7 +581,7 @@ export default function DashboardPage() {
                             <div className={`text-right text-xs ${
                               isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'
                             } ${isWeekend ? 'font-medium' : ''}`}>
-                              <span className='bg-background dark:bg-foreground px-1 rounded'>
+                              <span className='bg-background px-1 rounded'>
                                 {day.getDate()}
                               </span>
                             </div>
