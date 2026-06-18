@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
-import { Target, Plus } from 'lucide-react';
+import { Target, Plus, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { goalService } from '@/lib/store';
 import { tradeService } from '@/lib/store';
 import { Goal, GoalProgress, Trade } from '@/lib/types';
@@ -45,7 +45,7 @@ export default function GoalsSection() {
 
     setIsLoading(true);
     try {
-      console.log('Loading goals for user:', user.id);
+      // console.log('Loading goals for user:', user.id);
       const [goalsData, tradesData] = await Promise.all([
         goalService.getGoals(user.id).catch((err) => {
           console.error('Error loading goals:', err);
@@ -57,7 +57,13 @@ export default function GoalsSection() {
         }),
       ]);
 
-      console.log('Loaded goals:', goalsData.length, 'trades:', tradesData.length);
+        // Update goal statuses first (this updates the database)
+      await goalService.updateGoalStatuses(user.id).catch(() => {});
+      
+      // Reload goals to get the updated statuses
+      const updatedGoals = await goalService.getGoals(user.id).catch(() => goalsData);
+
+      // console.log('Loaded goals:', goalsData.length, 'trades:', tradesData.length);
       setGoals(goalsData);
       setTrades(tradesData);
 
@@ -65,7 +71,7 @@ export default function GoalsSection() {
       const progresses: GoalProgress[] = goalsData.map(goal =>
         goalService.getGoalProgress(user.id, goal, tradesData)
       );
-      console.log('Calculated progress for goals:', progresses.length);
+      // console.log('Calculated progress for goals:', progresses.length);
       setGoalProgresses(progresses);
 
       // Update goal statuses for completed/failed goals
@@ -255,6 +261,9 @@ export default function GoalsSection() {
           </div>
         ) : filteredGoals.length === 0 && !isLoading ? (
           <div className="text-center py-8 bg-muted/20 rounded-lg border border-border">
+            {activeFilter === 'active' && <Clock className="w-10 h-10 mx-auto mb-3 text-muted-foreground/60" />}
+            {activeFilter === 'completed' && <CheckCircle className="w-10 h-10 mx-auto mb-3 text-muted-foreground/60" />}
+            {activeFilter === 'failed' && <XCircle className="w-10 h-10 mx-auto mb-3 text-muted-foreground/60" />}
             <p className="text-muted-foreground">No {activeFilter} goals</p>
           </div>
         ) : null}
