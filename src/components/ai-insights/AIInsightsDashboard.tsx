@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import DashboardHeader from '@/app/sections/DashboardHeader';
@@ -21,11 +20,11 @@ import {
   Zap,
   ArrowUpRight,
   ArrowDownRight,
-  Sparkles,
   Activity,
   Award,
   Lightbulb,
   Shield,
+  Heart,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { FadeInUp } from '@/components/animations/FadeInUp';
@@ -386,7 +385,7 @@ export function AIInsightsDashboard({
                     <div className="shrink-0 mt-1">{getImpactIcon(pattern.impact)}</div>
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2 flex-wrap">
-                        <h4 className="font-semibold">{pattern.pattern}</h4>
+                        <h4 className="font-semibold capitalize">{pattern.pattern}</h4>
                         <Badge variant="outline" className="text-xs border-primary/30 text-primary">
                           {Math.round(pattern.confidence * 100)}% confidence
                         </Badge>
@@ -555,6 +554,292 @@ export function AIInsightsDashboard({
           </Card>
         </FadeInUp>
 
+        {/* Psychological Insights */}
+        {analysis.psychologicalInsights && analysis.psychologicalInsights.length > 0 && (
+          <FadeInUp delay={0.6}>
+            <Card className="border-0 bg-card/80 backdrop-blur-sm shadow-lg">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-500/10">
+                    <Brain className="h-5 w-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <CardTitle>Psychological Insights</CardTitle>
+                    <CardDescription>Mental and emotional aspects of your trading behavior</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {analysis.psychologicalInsights.map((insight, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.05 * index }}
+                      className="flex items-start gap-3 p-4 rounded-xl bg-purple-500/5 border border-purple-500/10"
+                    >
+                      <Brain className="h-5 w-5 text-purple-500 shrink-0 mt-0.5" />
+                      <span className="text-sm">{insight}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </FadeInUp>
+        )}
+
+        {/* Behavioral Patterns */}
+        {analysis.behavioralPatterns && analysis.behavioralPatterns.length > 0 && (
+          <FadeInUp delay={0.55}>
+            <Card className="border-0 bg-card/80 backdrop-blur-sm shadow-lg">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-indigo-500/10">
+                    <Activity className="h-5 w-5 text-indigo-500" />
+                  </div>
+                  <div>
+                    <CardTitle>Behavioral Patterns</CardTitle>
+                    <CardDescription>Detected trading behavior patterns and habits</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {analysis.behavioralPatterns.map((pattern, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.05 * index }}
+                      className="p-4 rounded-xl border border-border/50 hover:border-primary/30 transition-colors"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className={`shrink-0 px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                          pattern.severity === 'high' ? 'bg-red-500/10 text-rose-500' :
+                          pattern.severity === 'medium' ? 'bg-yellow-500/10 text-yellow-500' :
+                          'bg-green-500/10 text-emerald-500'
+                        }`}>
+                          {pattern.severity}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
+                            <h4 className="font-semibold capitalize">{pattern.type.replace(/_/g, ' ')}</h4>
+                            <Badge variant="outline" className="text-xs">
+                              {Math.round(pattern.confidence * 100)}% confidence
+                            </Badge>
+                            {pattern.impact === 'positive' && (
+                              <Badge className="text-xs bg-green-500/10 text-emerald-500 border-green-500/30">
+                                Positive
+                              </Badge>
+                            )}
+                            {pattern.impact === 'negative' && (
+                              <Badge className="text-xs bg-red-500/10 text-rose-500 border-red-500/30">
+                                Negative
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-3">{pattern.description}</p>
+                          {pattern.evidence.length > 0 && (
+                            <div className="mb-3">
+                              <h5 className="text-xs font-medium text-muted-foreground mb-1">Evidence:</h5>
+                              <ul className="text-xs text-muted-foreground list-disc list-inside">
+                                {pattern.evidence.slice(0, 2).map((ev, i) => (
+                                  <li key={i}>{ev}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          <div>
+                            <h5 className="text-xs font-medium text-muted-foreground mb-1">Recommendations:</h5>
+                            <ul className="text-sm list-disc list-inside">
+                              {pattern.recommendations.slice(0, 2).map((rec, i) => (
+                                <li key={i}>{rec}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </FadeInUp>
+        )}
+
+        {/* Strategy Recommendations */}
+        {analysis.strategyRecommendations && analysis.strategyRecommendations.length > 0 && (
+          <FadeInUp delay={0.6}>
+            <Card className="border-0 bg-card/80 backdrop-blur-sm shadow-lg">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-cyan-500/10">
+                    <Target className="h-5 w-5 text-cyan-500" />
+                  </div>
+                  <div>
+                    <CardTitle>Strategy Recommendations</CardTitle>
+                    <CardDescription>How to optimize your trading strategies</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {analysis.strategyRecommendations.map((rec, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.05 * index }}
+                      className={`p-4 rounded-xl border-2 ${
+                        rec.action === 'focus' ? 'border-green-500/30 bg-green-500/5' :
+                        rec.action === 'reduce' ? 'border-yellow-500/30 bg-yellow-500/5' :
+                        rec.action === 'eliminate' ? 'border-red-500/30 bg-red-500/5' :
+                        'border-blue-500/30 bg-blue-500/5'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold">{rec.strategy}</h4>
+                        <Badge className={`${
+                          rec.action === 'focus' ? 'bg-green-500/10 text-emerald-500 border-green-500/30' :
+                          rec.action === 'reduce' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30' :
+                          rec.action === 'eliminate' ? 'bg-red-500/10 text-rose-500 border-red-500/30' :
+                          'bg-blue-500/10 text-blue-500 border-blue-500/30'
+                        }`}>
+                          {rec.action.charAt(0).toUpperCase() + rec.action.slice(1)}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">{rec.reasoning}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Expected improvement: {Math.round(rec.expectedImprovement * 100)}%
+                      </p>
+                    </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </FadeInUp>
+        )}
+
+        {/* Time-Based Insights */}
+        {analysis.timeBasedInsights && (
+          <FadeInUp delay={0.5}>
+            <Card className="border-0 bg-card/80 backdrop-blur-sm shadow-lg">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-teal-500/10">
+                    <Clock className="h-5 w-5 text-teal-500" />
+                  </div>
+                  <div>
+                    <CardTitle>Time-Based Insights</CardTitle>
+                    <CardDescription>Your optimal trading times and rhythms</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="p-4 rounded-xl bg-green-500/5 border border-green-500/20">
+                    <div className="text-xs text-muted-foreground mb-1">Best Day</div>
+                    <div className="text-lg font-bold text-emerald-500">{analysis.timeBasedInsights.bestDayOfWeek}</div>
+                  </div>
+                  <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/20">
+                    <div className="text-xs text-muted-foreground mb-1">Worst Day</div>
+                    <div className="text-lg font-bold text-rose-500">{analysis.timeBasedInsights.worstDayOfWeek}</div>
+                  </div>
+                  {/* <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/20">
+                    <div className="text-xs text-muted-foreground mb-1">Best Time</div>
+                    <div className="text-lg font-bold text-blue-500">{analysis.timeBasedInsights.bestTimeOfDay}</div>
+                  </div> */}
+                  <div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/20">
+                    <div className="text-xs text-muted-foreground mb-1">Trading Rhythm</div>
+                    <div className="text-sm font-medium">{analysis.timeBasedInsights.tradingRhythm}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </FadeInUp>
+        )}
+
+        {/* Psychology Profile */}
+        {analysis.psychologyProfile && (
+          <FadeInUp delay={0.65}>
+            <Card className="border-0 bg-card/80 backdrop-blur-sm shadow-lg">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-pink-500/10">
+                    <Heart className="h-5 w-5 text-pink-500" />
+                  </div>
+                  <div>
+                    <CardTitle>Psychology Profile</CardTitle>
+                    <CardDescription>Your trading personality and emotional patterns</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-sm text-muted-foreground">Emotional Stability</span>
+                        <span className="text-sm font-medium">{analysis.psychologyProfile.emotionalStability}/10</span>
+                      </div>
+                      <Progress value={analysis.psychologyProfile.emotionalStability * 10} className="h-2" />
+                    </div>
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-sm text-muted-foreground">Discipline Score</span>
+                        <span className="text-sm font-medium">{analysis.psychologyProfile.disciplineScore}/10</span>
+                      </div>
+                      <Progress value={analysis.psychologyProfile.disciplineScore * 10} className="h-2" />
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-2">Risk Tolerance</div>
+                      <Badge className={`${
+                        analysis.psychologyProfile.riskTolerance === 'conservative' ? 'bg-green-500/10 text-emerald-500' :
+                        analysis.psychologyProfile.riskTolerance === 'aggressive' ? 'bg-red-500/10 text-rose-500' :
+                        'bg-yellow-500/10 text-yellow-500'
+                      }`}>
+                        {analysis.psychologyProfile.riskTolerance.charAt(0).toUpperCase() + analysis.psychologyProfile.riskTolerance.slice(1)}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-2">Common Emotions</div>
+                      <div className="flex flex-wrap gap-2">
+                        {analysis.psychologyProfile.commonEmotions.map((emotion, i) => (
+                          <Badge key={i} variant="outline" className="text-xs">
+                            {emotion}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-2">Key Triggers</div>
+                      <div className="flex flex-wrap gap-2">
+                        {analysis.psychologyProfile.triggers.map((trigger, i) => (
+                          <Badge key={i} variant="outline" className="text-xs bg-orange-500/10 text-orange-500 border-orange-500/30">
+                            {trigger}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    {analysis.psychologyProfile.improvementAreas.length > 0 && (
+                      <div>
+                        <div className="text-sm text-muted-foreground mb-2">Improvement Areas</div>
+                        <ul className="text-sm list-disc list-inside">
+                          {analysis.psychologyProfile.improvementAreas.slice(0, 3).map((area, i) => (
+                            <li key={i}>{area}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </FadeInUp>
+        )}
         {/* Psychological Insights */}
         {analysis.psychologicalInsights && analysis.psychologicalInsights.length > 0 && (
           <FadeInUp delay={0.6}>

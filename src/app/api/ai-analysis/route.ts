@@ -5,7 +5,11 @@ import {
   prepareTradesForAI,
   type AIAnalysisResponse,
   type TradeMetrics,
+  type TradePattern,
+  type BehavioralPattern,
 } from '@/lib/ai-analysis';
+import { detectBehavioralPatterns, generateStatisticalPatterns } from '@/lib/ai-analysis/patterns';
+import { analyzeTradingPsychology, generatePsychologicalInsights } from '@/lib/ai-analysis/psychology';
 
 // Cache configuration (in-memory for now, could be Redis in production)
 const analysisCache = new Map<
@@ -15,74 +19,43 @@ const analysisCache = new Map<
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-// Generate AI analysis using OpenAI API
+/**
+ * Stage 1: Data Enrichment - Calculate all metrics and patterns
+ */
+function enrichTradeData(trades: any[], context: ReturnType<typeof generateAnalysisContext>) {
+  const behavioralPatterns = detectBehavioralPatterns(trades);
+  const statisticalPatterns = generateStatisticalPatterns(trades);
+  const psychologyProfile = analyzeTradingPsychology(trades);
+  const psychologicalInsights = generatePsychologicalInsights(trades);
+  
+  return {
+    ...context,
+    behavioralPatterns,
+    statisticalPatterns,
+    psychologyProfile,
+    psychologicalInsights,
+  };
+}
+
+/**
+ * Stage 2: Generate AI Analysis using OpenAI
+ */
 async function generateAIAnalysis(
   trades: any[],
-  context: ReturnType<typeof generateAnalysisContext>
+  enrichedContext: ReturnType<typeof enrichTradeData>
 ): Promise<AIAnalysisResponse> {
-  const { metrics, byStrategy, bySymbol, byDirection, monthly } = context;
+  const { metrics, byStrategy, bySymbol, byDirection, monthly, timeBased, 
+          behavioralPatterns, statisticalPatterns, psychologyProfile } = enrichedContext;
 
   // Check if OpenAI API key is configured
   const openaiApiKey = process.env.OPENAI_API_KEY_JOURNII;
   
   if (!openaiApiKey) {
-    // Return a simulated analysis if no API key is configured
-    return generateSimulatedAnalysis(trades, context);
+    return generateEnhancedSimulatedAnalysis(trades, enrichedContext);
   }
 
-  // Prepare the prompt for OpenAI
-  const prompt = `You are an expert trading analyst. Analyze the following trading data and provide detailed insights.
-
-## Trading Metrics Summary
-- Total Trades: ${metrics.totalTrades}
-- Win Rate: ${metrics.winRate.toFixed(1)}%
-- Total P&L: $${metrics.totalPnl.toFixed(2)}
-- Average Win: $${metrics.averageWin.toFixed(2)}
-- Average Loss: $${metrics.averageLoss.toFixed(2)}
-- Profit Factor: ${metrics.profitFactor.toFixed(2)}
-- Win/Loss Ratio: ${metrics.averageWinLossRatio.toFixed(2)}
-- Best Trade: $${metrics.bestTrade.toFixed(2)}
-- Worst Trade: $${metrics.worstTrade.toFixed(2)}
-- Current Streak: ${metrics.currentStreak.count} ${metrics.currentStreak.type}s
-
-## Performance by Strategy
-${byStrategy.map(s => `- ${s.strategy}: ${s.tradeCount} trades, ${s.winRate.toFixed(1)}% win rate, $${s.totalPnl.toFixed(2)} total P&L`).join('\n')}
-
-## Performance by Symbol
-${bySymbol.slice(0, 5).map(s => `- ${s.symbol}: ${s.tradeCount} trades, ${s.winRate.toFixed(1)}% win rate, $${s.totalPnl.toFixed(2)} total P&L`).join('\n')}
-
-## Performance by Direction
-${byDirection.map(d => `- ${d.direction}: ${d.tradeCount} trades, ${d.winRate.toFixed(1)}% win rate, $${d.totalPnl.toFixed(2)} total P&L`).join('\n')}
-
-## Monthly Performance
-${monthly.slice(-6).map(m => `- ${m.month}: ${m.tradeCount} trades, ${m.winRate.toFixed(1)}% win rate, $${m.totalPnl.toFixed(2)} total P&L`).join('\n')}
-
-## Recent Trades (sample)
-${trades.slice(0, 10).map(t => `- ${t.date}: ${t.symbol} (${t.direction}) - P&L: $${t.pnl.toFixed(2)}, Notes: ${t.notes || 'None'}`).join('\n')}
-
-Please provide a comprehensive analysis including:
-1. Executive summary of trading performance
-2. Key strengths (what the trader is doing well)
-3. Critical weaknesses (areas that need improvement)
-4. Pattern analysis (recurring themes in wins and losses)
-5. Risk assessment with specific recommendations
-6. Action plan with 3-5 specific steps to improve
-7. Performance trends (improving or declining)
-8. Psychological insights based on trade notes
-9. Overall rating from 1-10
-
-Format the response as JSON with the following structure:
-{
-  "summary": "string",
-  "strengths": ["string"],
-  "weaknesses": ["string"],
-  "patterns": [{"pattern": "string", "description": "string", "impact": "positive|negative|neutral", "confidence": number}],
-  "riskAssessment": {"level": "low|medium|high", "description": "string", "recommendations": ["string"]},
-  "actionPlan": [{"step": "string", "priority": "high|medium|low", "description": "string"}],
-  "trends": {"improving": boolean, "description": "string", "metrics": ["string"]},
-  "psychologicalInsights": ["string"],
-  "overallRating": number
-}`;
+  // Build a comprehensive, multi-layered prompt
+  const prompt = buildEnhancedPrompt(trades, enrichedContext);
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -92,19 +65,33 @@ Format the response as JSON with the following structure:
         Authorization: `Bearer ${openaiApiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4-turbo-preview', // Use more capable model
         messages: [
           {
             role: 'system',
-            content: 'You are an expert trading analyst and coach. You provide detailed, actionable insights to help traders improve their performance. You analyze trading data objectively and provide constructive feedback.',
+            content: `You are a senior trading psychologist and performance analyst with 15+ years of experience working with professional traders. Your expertise includes:
+- Statistical analysis of trading performance
+- Behavioral finance and trading psychology
+- Risk management and position sizing
+- Pattern recognition in trading data
+- Performance optimization strategies
+
+Your analysis style is:
+- Data-driven and evidence-based
+- Specific and actionable, never generic
+- Focused on root causes, not just symptoms
+- Balanced between constructive criticism and positive reinforcement
+- Tailored to the individual trader's patterns and psychology
+
+You provide insights that help traders understand not just WHAT is happening in their trading, but WHY it's happening and HOW to improve it.`
           },
           {
             role: 'user',
             content: prompt,
           },
         ],
-        temperature: 0.7,
-        max_tokens: 2000,
+        temperature: 0.3, // Lower temperature for more focused analysis
+        max_tokens: 3000,
         response_format: { type: 'json_mode' },
       }),
     });
@@ -119,56 +106,270 @@ Format the response as JSON with the following structure:
     return JSON.parse(content) as AIAnalysisResponse;
   } catch (error) {
     console.error('Error calling OpenAI API:', error);
-    // Fall back to simulated analysis
-    return generateSimulatedAnalysis(trades, context);
+    return generateEnhancedSimulatedAnalysis(trades, enrichedContext);
   }
 }
 
 /**
- * Generate a simulated analysis when AI is not available
- * This provides basic insights based on the metrics
+ * Build a comprehensive, multi-stage prompt for deeper analysis
  */
-function generateSimulatedAnalysis(
+function buildEnhancedPrompt(trades: any[], context: any): string {
+  const { metrics, byStrategy, bySymbol, byDirection, monthly, timeBased,
+          behavioralPatterns, statisticalPatterns, psychologyProfile } = context;
+
+  return `You are analyzing a trader's complete trading history. Provide a comprehensive, data-driven analysis.
+
+## TRADER PROFILE & CONTEXT
+- Analysis Date: ${new Date().toISOString().split('T')[0]}
+- Total Trades Analyzed: ${metrics.totalTrades}
+- Date Range: ${context.dateRange.earliest} to ${context.dateRange.latest}
+- Trading Frequency: ${metrics.tradeFrequency.toFixed(1)} trades per week
+
+## CORE PERFORMANCE METRICS
+- Win Rate: ${metrics.winRate.toFixed(1)}% (${metrics.winningTrades}W / ${metrics.losingTrades}L)
+- Total P&L: $${metrics.totalPnl.toFixed(2)}
+- Average Win: $${metrics.averageWin.toFixed(2)} | Average Loss: $${metrics.averageLoss.toFixed(2)}
+- Profit Factor: ${metrics.profitFactor.toFixed(2)}
+- Win/Loss Ratio: ${metrics.averageWinLossRatio.toFixed(2)}
+- Expectancy: $${metrics.expectancy.toFixed(2)} per trade
+- Average R-Multiple: ${metrics.avgRMultiple.toFixed(2)}R
+- Best Trade: $${metrics.bestTrade.toFixed(2)} | Worst Trade: $${metrics.worstTrade.toFixed(2)}
+- Current Streak: ${metrics.currentStreak.count} ${metrics.currentStreak.type}s
+- Max Consecutive Wins: ${metrics.consecutiveWins} | Max Consecutive Losses: ${metrics.consecutiveLosses}
+
+## ADVANCED METRICS
+- Sharpe Ratio: ${metrics.sharpeRatio.toFixed(2)}
+- P&L Standard Deviation: $${metrics.pnlStandardDeviation.toFixed(2)}
+- Max Drawdown: $${metrics.maxDrawdown.toFixed(2)} over ${metrics.maxDrawdownDuration} trades
+- Win Rate Consistency: ${metrics.winRateConsistency.toFixed(0)}/100
+- Estimated Holding Period: ${metrics.averageHoldingPeriod} days
+
+## PERFORMANCE BREAKDOWN
+
+### By Strategy
+${byStrategy.map((s: { strategy: string; tradeCount: number; winRate: number; totalPnl: number; avgRMultiple: number; consistency: number }) => `- ${s.strategy}: ${s.tradeCount} trades, ${s.winRate.toFixed(1)}% WR, $${s.totalPnl.toFixed(2)} P&L, ${s.avgRMultiple.toFixed(2)}R avg, ${Math.round(s.consistency * 100)}% consistency`).join('\n')}
+
+### By Direction
+${byDirection.map((d: { direction: string; tradeCount: number; winRate: number; totalPnl: number; avgRMultiple: number }) => `- ${d.direction}: ${d.tradeCount} trades, ${d.winRate.toFixed(1)}% WR, $${d.totalPnl.toFixed(2)} P&L, ${d.avgRMultiple.toFixed(2)}R avg`).join('\n')}
+
+### By Symbol (Top 5)
+${bySymbol.slice(0, 5).map((s: { symbol: string; tradeCount: number; winRate: number; totalPnl: number; avgRMultiple: number }) => `- ${s.symbol}: ${s.tradeCount} trades, ${s.winRate.toFixed(1)}% WR, $${s.totalPnl.toFixed(2)} P&L, ${s.avgRMultiple.toFixed(2)}R avg`).join('\n')}
+
+### Monthly Performance
+${monthly.slice(-6).map((m: { month: string; tradeCount: number; winRate: number; totalPnl: number; avgRMultiple: number }) => `- ${m.month}: ${m.tradeCount} trades, ${m.winRate.toFixed(1)}% WR, $${m.totalPnl.toFixed(2)} P&L, ${m.avgRMultiple.toFixed(2)}R avg`).join('\n')}
+
+### Time-Based Patterns
+**By Day of Week:**
+${timeBased.byDayOfWeek.map((d: { day: string; tradeCount: number; winRate: number; totalPnl: number }) => `- ${d.day}: ${d.tradeCount} trades, ${d.winRate.toFixed(1)}% WR, $${d.totalPnl.toFixed(2)} P&L`).join('\n')}
+
+## DETECTED BEHAVIORAL PATTERNS
+${behavioralPatterns.length > 0 ? behavioralPatterns.map((bp: { severity: string; type: string; description: string; confidence: number; evidence: string[] }) => `- [${bp.severity.toUpperCase()}] ${bp.type.replace(/_/g, ' ').toUpperCase()}: ${bp.description} (Confidence: ${Math.round(bp.confidence * 100)}%)
+  Evidence: ${bp.evidence.slice(0, 2).join('; ')}`).join('\n\n') : '- No significant behavioral patterns detected'}
+
+## STATISTICAL PATTERNS
+${statisticalPatterns.length > 0 ? statisticalPatterns.map((sp: { impact: string; pattern: string; description: string; confidence: number }) => `- [${sp.impact.toUpperCase()}] ${sp.pattern}: ${sp.description} (Confidence: ${Math.round(sp.confidence * 100)}%)`).join('\n\n') : '- No significant statistical patterns detected'}
+
+## PSYCHOLOGY PROFILE
+${psychologyProfile ? `
+- Emotional Stability: ${psychologyProfile.emotionalStability}/10
+- Discipline Score: ${psychologyProfile.disciplineScore}/10
+- Risk Tolerance: ${psychologyProfile.riskTolerance}
+- Common Emotions: ${psychologyProfile.commonEmotions.join(', ')}
+- Key Triggers: ${psychologyProfile.triggers.join(', ')}
+- Coping Mechanisms: ${psychologyProfile.copingMechanisms.join(', ')}
+- Improvement Areas: ${psychologyProfile.improvementAreas.join(', ')}` : '- Insufficient data for psychology profile'}
+
+## RECENT TRADES SAMPLE
+${trades.slice(0, 10).map(t => `- ${t.date}: ${t.symbol} (${t.direction}) - P&L: $${t.pnl.toFixed(2)}, Strategy: ${t.tags.join(', ')}, Notes: ${t.notes || 'None'}`).join('\n')}
+
+---
+
+## ANALYSIS REQUIREMENTS
+
+Provide a comprehensive analysis in JSON format with the following structure:
+
+{
+  "summary": "A concise 2-3 sentence executive summary that captures the most important insights about this trader's performance, psychology, and key areas for improvement.",
+  
+  "strengths": [
+    "Specific, evidence-based strengths with metrics. Example: 'Strong 65% win rate on momentum strategies with 2.1R average winner'",
+    "Another specific strength...",
+    "Focus on what the data shows, not generic praise"
+  ],
+  
+  "weaknesses": [
+    "Specific, data-backed weaknesses. Example: 'Win rate drops to 35% on Friday trades, suggesting end-of-week fatigue'",
+    "Another specific weakness with evidence...",
+    "Focus on patterns that can be improved"
+  ],
+  
+  "patterns": [
+    {
+      "pattern": "Name of the pattern",
+      "description": "Detailed description with specific data points",
+      "impact": "positive|negative|neutral",
+      "confidence": 0.0-1.0,
+      "category": "statistical|behavioral|temporal|strategic",
+      "actionable": true|false,
+      "metrics": {
+        "winRateImpact": number,
+        "pnlImpact": number,
+        "frequency": number
+      }
+    }
+  ],
+  
+  "behavioralPatterns": [
+    {
+      "type": "revenge_trading|overtrading|hesitation|fomo|panic_selling|greed|consistency",
+      "description": "Detailed description with evidence",
+      "severity": "low|medium|high",
+      "confidence": 0.0-1.0,
+      "evidence": ["specific evidence 1", "specific evidence 2"],
+      "impact": "positive|negative|neutral",
+      "recommendations": ["specific recommendation 1", "specific recommendation 2"]
+    }
+  ],
+  
+  "psychologyProfile": {
+    "emotionalStability": 1-10,
+    "disciplineScore": 1-10,
+    "riskTolerance": "conservative|moderate|aggressive",
+    "commonEmotions": ["emotion1", "emotion2"],
+    "triggers": ["trigger1", "trigger2"],
+    "copingMechanisms": ["mechanism1", "mechanism2"],
+    "improvementAreas": ["area1", "area2"]
+  },
+  
+  "timeBasedInsights": {
+    "bestDayOfWeek": "day name",
+    "worstDayOfWeek": "day name",
+    "bestTimeOfDay": "period",
+    "tradingRhythm": "description of their optimal trading rhythm"
+  },
+  
+  "riskAssessment": {
+    "level": "low|medium|high",
+    "description": "Comprehensive risk assessment based on drawdowns, position sizing consistency, and behavioral patterns",
+    "recommendations": [
+      "Specific risk management recommendations",
+      "Position sizing suggestions",
+      "Drawdown control measures"
+    ],
+    "quantitativeScore": 1-10,
+    "maxDrawdownRisk": number,
+    "positionSizingScore": 1-10
+  },
+  
+  "actionPlan": [
+    {
+      "step": "Specific action item",
+      "priority": "high|medium|low",
+      "description": "Detailed explanation of why this is important and how to implement it",
+      "expectedImpact": "Quantified expected improvement",
+      "timeline": "When to implement and how long it should take",
+      "successMetrics": ["metric1 to track", "metric2 to track"]
+    }
+  ],
+  
+  "trends": {
+    "improving": true|false,
+    "description": "Analysis of performance trajectory with specific metrics",
+    "metrics": ["which metrics show the trend"],
+    "momentum": "accelerating|stable|decelerating",
+    "trajectory": "upward|sideways|downward"
+  },
+  
+  "psychologicalInsights": [
+    "Specific psychological insights based on the data",
+    "Connections between emotions and trading performance",
+    "Mental game recommendations"
+  ],
+  
+  "strategyRecommendations": [
+    {
+      "strategy": "strategy name",
+      "action": "focus|reduce|eliminate|modify",
+      "reasoning": "Data-driven reasoning for this recommendation",
+      "expectedImprovement": "Expected impact on overall performance"
+    }
+  ],
+  
+  "overallRating": 1-10,
+  "analysisConfidence": 1-10
+}`;
+}
+
+/**
+ * Stage 3: Enhanced fallback analysis when AI is unavailable
+ */
+function generateEnhancedSimulatedAnalysis(
   trades: any[],
-  context: ReturnType<typeof generateAnalysisContext>
+  enrichedContext: ReturnType<typeof enrichTradeData>
 ): AIAnalysisResponse {
-  const { metrics, byStrategy, byDirection, monthly } = context;
+  const { metrics, byStrategy, bySymbol, byDirection, monthly, timeBased,
+          behavioralPatterns, statisticalPatterns, psychologyProfile } = enrichedContext;
 
+  // Generate strengths based on data
   const strengths: string[] = [];
-  const weaknesses: string[] = [];
-  const actionPlan: Array<{ step: string; priority: 'high' | 'medium' | 'low'; description: string }> = [];
-
-  // Analyze strengths
+  
   if (metrics.winRate >= 60) {
-    strengths.push(`Strong win rate of ${metrics.winRate.toFixed(1)}% - above the average threshold for profitable trading`);
+    strengths.push(`Strong win rate of ${metrics.winRate.toFixed(1)}% - significantly above the 50% breakeven threshold`);
   }
   if (metrics.profitFactor >= 1.5) {
-    strengths.push(`Excellent profit factor of ${metrics.profitFactor.toFixed(2)} - indicating strong risk management`);
+    strengths.push(`Excellent profit factor of ${metrics.profitFactor.toFixed(2)} - indicating strong risk management and profitable trading`);
   }
-  if (metrics.averageWinLossRatio >= 1.5) {
-    strengths.push(`Good average win/loss ratio of ${metrics.averageWinLossRatio.toFixed(2)} - winners are significantly larger than losers`);
+  if (metrics.avgRMultiple >= 1.5) {
+    strengths.push(`Average R-multiple of ${metrics.avgRMultiple.toFixed(2)}R - winners are significantly larger than losers`);
   }
   if (metrics.totalPnl > 0) {
-    strengths.push(`Overall profitable with total P&L of $${metrics.totalPnl.toFixed(2)}`);
+    strengths.push(`Overall profitable with total P&L of $${metrics.totalPnl.toFixed(2)} across ${metrics.totalTrades} trades`);
   }
+  if (metrics.winRateConsistency >= 70) {
+    strengths.push(`High win rate consistency (${metrics.winRateConsistency.toFixed(0)}%) - performance is stable across time periods`);
+  }
+  
+  // Add strategy-specific strengths
+  byStrategy.forEach(s => {
+    if (s.tradeCount >= 3 && s.winRate >= 65) {
+      strengths.push(`${s.strategy} strategy showing ${s.winRate.toFixed(1)}% win rate across ${s.tradeCount} trades`);
+    }
+  });
 
-  // Analyze weaknesses
+  // Generate weaknesses based on data
+  const weaknesses: string[] = [];
+  
   if (metrics.winRate < 50) {
-    weaknesses.push(`Win rate of ${metrics.winRate.toFixed(1)}% is below 50% - focus on improving entry timing`);
+    weaknesses.push(`Win rate of ${metrics.winRate.toFixed(1)}% is below 50% - focus on improving entry timing and setup selection`);
   }
   if (metrics.profitFactor < 1.2 && metrics.profitFactor > 0) {
-    weaknesses.push(`Profit factor of ${metrics.profitFactor.toFixed(2)} is low - review risk management and position sizing`);
+    weaknesses.push(`Low profit factor of ${metrics.profitFactor.toFixed(2)} - review risk management and position sizing`);
   }
   if (metrics.consecutiveLosses >= 5) {
     weaknesses.push(`Maximum consecutive losses of ${metrics.consecutiveLosses} suggests potential emotional trading during drawdowns`);
   }
+  if (metrics.maxDrawdown > Math.abs(metrics.totalPnl) * 0.5 && metrics.totalPnl > 0) {
+    weaknesses.push(`Significant drawdown of $${metrics.maxDrawdown.toFixed(2)} - consider implementing stricter risk controls`);
+  }
+  
+  // Add time-based weaknesses
+  timeBased.byDayOfWeek.forEach(d => {
+    if (d.tradeCount >= 3 && d.winRate < 40) {
+      weaknesses.push(`Poor performance on ${d.day}s (${d.winRate.toFixed(1)}% win rate) - consider avoiding trades on this day`);
+    }
+  });
 
   // Generate action plan
+  const actionPlan: Array<{ step: string; priority: 'high' | 'medium' | 'low'; description: string; expectedImpact: string; timeline: string; successMetrics: string[] }> = [];
+  
   if (metrics.winRate < 55) {
     actionPlan.push({
       step: 'Improve Entry Strategy',
       priority: 'high',
-      description: `Focus on refining entry criteria. Your current win rate of ${metrics.winRate.toFixed(1)}% suggests entries need improvement. Consider adding more confirmation signals before entering trades.`,
+      description: `Your current win rate of ${metrics.winRate.toFixed(1)}% suggests entries need refinement. Focus on higher-probability setups and add more confirmation signals before entering trades.`,
+      expectedImpact: 'Potential 10-15% improvement in win rate',
+      timeline: 'Implement over next 2-4 weeks',
+      successMetrics: ['Win rate above 55%', 'Reduced losing trades']
     });
   }
 
@@ -176,86 +377,142 @@ function generateSimulatedAnalysis(
     actionPlan.push({
       step: 'Optimize Risk/Reward Ratio',
       priority: 'high',
-      description: `Your current win/loss ratio is ${metrics.averageWinLossRatio.toFixed(2)}. Aim for at least 1.5:1 by setting clearer profit targets and tighter stop losses.`,
+      description: `Current win/loss ratio is ${metrics.averageWinLossRatio.toFixed(2)}. Aim for at least 1.5:1 by setting clearer profit targets and tighter stop losses.`,
+      expectedImpact: 'Improved expectancy and profitability',
+      timeline: 'Implement immediately',
+      successMetrics: ['Win/loss ratio above 1.5', 'Higher average R-multiple']
+    });
+  }
+
+  if (behavioralPatterns.some(bp => bp.type === 'revenge_trading')) {
+    actionPlan.push({
+      step: 'Implement Cooling-Off Period',
+      priority: 'high',
+      description: 'After any losing trade, wait at least 2-4 hours before entering a new position. This prevents revenge trading and emotional decision-making.',
+      expectedImpact: 'Reduced consecutive losses and improved decision quality',
+      timeline: 'Start immediately, maintain for 30 days',
+      successMetrics: ['Fewer consecutive losses', 'Better performance after losses']
     });
   }
 
   actionPlan.push({
     step: 'Maintain Detailed Trade Journal',
     priority: 'medium',
-    description: 'Continue documenting trade rationale, emotions, and market conditions. This data is invaluable for identifying patterns and improving decision-making.',
-  });
-
-  actionPlan.push({
-    step: 'Review and Refine Strategy',
-    priority: 'medium',
-    description: `Analyze your best-performing ${byStrategy[0]?.strategy ? `strategy "${byStrategy[0].strategy}"` : 'strategies'} and identify common factors. Consider focusing more on what works.`,
+    description: 'Continue documenting trade rationale, emotions, and market conditions. Include pre-trade checklist and post-trade review for every position.',
+    expectedImpact: 'Better pattern recognition and self-awareness',
+    timeline: 'Ongoing daily practice',
+    successMetrics: ['Consistent journaling', 'Improved pattern identification']
   });
 
   // Determine risk level
   let riskLevel: 'low' | 'medium' | 'high' = 'medium';
   let riskDescription = 'Moderate risk profile detected.';
+  let riskScore = 5;
   
-  if (metrics.profitFactor > 2 && metrics.winRate > 60) {
+  if (metrics.profitFactor > 2 && metrics.winRate > 60 && metrics.maxDrawdown < Math.abs(metrics.totalPnl) * 0.3) {
     riskLevel = 'low';
-    riskDescription = 'Strong risk management practices observed.';
-  } else if (metrics.profitFactor < 1 || metrics.winRate < 40) {
+    riskDescription = 'Strong risk management practices observed with controlled drawdowns and consistent profitability.';
+    riskScore = 8;
+  } else if (metrics.profitFactor < 1 || metrics.winRate < 40 || metrics.maxDrawdown > Math.abs(metrics.totalPnl)) {
     riskLevel = 'high';
-    riskDescription = 'Risk management needs immediate attention.';
+    riskDescription = 'Risk management needs immediate attention. Current patterns suggest potential for significant drawdowns.';
+    riskScore = 3;
   }
 
   // Determine trends
   const recentMonthly = monthly.slice(-3);
   const improving = recentMonthly.length >= 2 && 
     recentMonthly[recentMonthly.length - 1].totalPnl > recentMonthly[0].totalPnl;
+  
+  const momentum = improving ? 
+    (recentMonthly.length >= 3 && recentMonthly.every((m, i) => i === 0 || m.totalPnl > recentMonthly[i-1].totalPnl) ? 'accelerating' : 'stable') : 
+    'decelerating';
 
   // Calculate overall rating
   let rating = 5; // Base rating
   if (metrics.winRate > 60) rating += 1;
   if (metrics.profitFactor > 1.5) rating += 1;
   if (metrics.totalPnl > 0) rating += 1;
-  if (metrics.averageWinLossRatio > 1.5) rating += 1;
+  if (metrics.avgRMultiple > 1.5) rating += 1;
   if (improving) rating += 1;
-  rating = Math.min(10, Math.max(1, rating));
+  if (metrics.winRateConsistency > 70) rating += 0.5;
+  rating = Math.min(10, Math.max(1, Math.round(rating)));
+
+  // Generate patterns from data
+  const patterns: TradePattern[] = [];
+  
+  // Add statistical patterns
+  statisticalPatterns.slice(0, 3).forEach(sp => {
+    patterns.push(sp);
+  });
+
+  // Add behavioral patterns
+  behavioralPatterns.slice(0, 2).forEach(bp => {
+    patterns.push({
+      pattern: bp.type.replace(/_/g, ' ').charAt(0).toUpperCase() + bp.type.replace(/_/g, ' ').slice(1),
+      description: bp.description,
+      impact: bp.impact,
+      confidence: bp.confidence,
+      category: 'behavioral',
+      actionable: true,
+      metrics: {
+        frequency: 1,
+      }
+    });
+  });
+
+  // Time-based insights
+  const bestDay = timeBased.byDayOfWeek.reduce((a, b) => a.winRate > b.winRate ? a : b, timeBased.byDayOfWeek[0]);
+  const worstDay = timeBased.byDayOfWeek.reduce((a, b) => a.winRate < b.winRate ? a : b, timeBased.byDayOfWeek[0]);
+
+  // Strategy recommendations
+  const strategyRecommendations = byStrategy.map(s => ({
+    strategy: s.strategy,
+    action: s.winRate > 60 ? 'focus' as const : s.winRate < 40 ? 'reduce' as const : 'modify' as const,
+    reasoning: `${s.strategy} shows ${s.winRate.toFixed(1)}% win rate with ${s.tradeCount} trades`,
+    expectedImprovement: s.winRate > 60 ? 0.1 : s.winRate < 40 ? -0.05 : 0.05
+  }));
 
   return {
-    summary: `Analysis of ${metrics.totalTrades} trades shows a ${metrics.winRate.toFixed(1)}% win rate with total P&L of $${metrics.totalPnl.toFixed(2)}. ${metrics.totalPnl > 0 ? 'Overall performance is profitable.' : 'Focus needed on improving profitability.'} ${improving ? 'Recent trends show improvement.' : 'Performance has been inconsistent.'}`,
+    summary: `Analysis of ${metrics.totalTrades} trades shows a ${metrics.winRate.toFixed(1)}% win rate with total P&L of $${metrics.totalPnl.toFixed(2)}. ${metrics.totalPnl > 0 ? 'Overall performance is profitable.' : 'Focus needed on improving profitability.'} ${improving ? 'Recent trends show improvement.' : 'Performance has been inconsistent.'} ${behavioralPatterns.length > 0 ? `Key behavioral patterns detected: ${behavioralPatterns.map(bp => bp.type.replace(/_/g, ' ')).join(', ')}.` : ''}`,
     strengths: strengths.length > 0 ? strengths : ['Consistent trade logging and journaling'],
     weaknesses: weaknesses.length > 0 ? weaknesses : ['No major weaknesses identified, but there is always room for improvement'],
-    patterns: [
-      {
-        pattern: 'Strategy Performance Variation',
-        description: byStrategy.length > 1 
-          ? `Different strategies show varying success rates. Best performing: ${byStrategy[0]?.strategy || 'N/A'}` 
-          : 'Limited strategy data for pattern analysis',
-        impact: 'neutral',
-        confidence: 0.7,
-      },
-    ],
+    patterns,
+    behavioralPatterns,
+    psychologyProfile: psychologyProfile || undefined,
+    timeBasedInsights: {
+      bestDayOfWeek: bestDay?.day || 'N/A',
+      worstDayOfWeek: worstDay?.day || 'N/A',
+      bestTimeOfDay: 'Insufficient time data',
+      tradingRhythm: `Based on ${metrics.tradeFrequency.toFixed(1)} trades per week, you maintain ${metrics.tradeFrequency > 10 ? 'high' : 'moderate'} trading activity.`,
+    },
     riskAssessment: {
       level: riskLevel,
       description: riskDescription,
       recommendations: [
-        'Always use stop losses',
-        'Risk no more than 1-2% per trade',
+        'Always use stop losses on every trade',
+        'Risk no more than 1-2% of capital per trade',
         'Review losing trades to identify patterns',
+        'Implement a maximum daily loss limit',
       ],
+      quantitativeScore: riskScore,
+      maxDrawdownRisk: metrics.maxDrawdown,
+      positionSizingScore: Math.min(10, Math.max(1, Math.round(riskScore * 1.2))),
     },
     actionPlan,
     trends: {
       improving,
       description: improving 
-        ? 'Recent performance shows positive momentum' 
-        : 'Performance has been volatile - focus on consistency',
+        ? 'Recent performance shows positive momentum with improving monthly results' 
+        : 'Performance has been volatile - focus on consistency and process improvement',
       metrics: ['winRate', 'profitFactor', 'monthlyPnl'],
+      momentum: momentum as 'accelerating' | 'stable' | 'decelerating',
+      trajectory: improving ? 'upward' as const : 'sideways' as const,
     },
-    psychologicalInsights: [
-      'Continue maintaining emotional awareness during trading',
-      trades.some(t => t.notes?.toLowerCase().includes('emotional') || t.notes?.toLowerCase().includes('frustrated'))
-        ? 'Some trades indicate emotional decision-making - consider implementing a cooling-off period after losses'
-        : 'Trade notes show good self-awareness and reflection',
-    ],
+    psychologicalInsights: psychologyProfile ? generatePsychologicalInsights(trades) : ['Continue maintaining emotional awareness during trading'],
+    strategyRecommendations,
     overallRating: rating,
+    analysisConfidence: Math.min(8, Math.max(3, Math.round(metrics.totalTrades / 10))),
   };
 }
 
@@ -290,23 +547,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate analysis context
+    // Stage 1: Data Enrichment
     const context = generateAnalysisContext(trades);
     const preparedTrades = prepareTradesForAI(trades);
+    const enrichedContext = enrichTradeData(preparedTrades, context);
 
-    // Generate AI analysis
-    const analysis = await generateAIAnalysis(preparedTrades, context);
+    // Stage 2: Generate AI Analysis (or fallback to Stage 3)
+    const analysis = await generateAIAnalysis(preparedTrades, enrichedContext);
 
     // Cache the result
     analysisCache.set(userId, {
       analysis,
-      metrics: context.metrics,
+      metrics: enrichedContext.metrics,
       timestamp: Date.now(),
     });
 
     return NextResponse.json({
       analysis,
-      metrics: context.metrics,
+      metrics: enrichedContext.metrics,
       cached: false,
     });
   } catch (error) {
