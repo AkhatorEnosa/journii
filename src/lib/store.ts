@@ -73,7 +73,7 @@ class SupabaseTradeService implements ITradeService {
   ): Promise<Trade> {
     if (!supabase) throw new Error('Supabase is not configured');
 
-    const tradeToInsert = {
+    const tradeToInsert: any = {
       user_id: userId,
       symbol: tradeData.symbol,
       entry_price: tradeData.entryPrice,
@@ -85,6 +85,10 @@ class SupabaseTradeService implements ITradeService {
       tags: tradeData.tags,
       date: tradeData.date,
     };
+    
+    // Include optional datetime fields only if they have values (not empty strings)
+    if (tradeData.openDateTime) tradeToInsert.open_datetime = tradeData.openDateTime;
+    if (tradeData.closeDateTime) tradeToInsert.close_datetime = tradeData.closeDateTime;
 
     const { data, error } = await supabase
       .from('trades')
@@ -114,6 +118,9 @@ class SupabaseTradeService implements ITradeService {
     if (updates.notes !== undefined) updateData.notes = updates.notes;
     if (updates.tags !== undefined) updateData.tags = updates.tags;
     if (updates.date !== undefined) updateData.date = updates.date;
+    // Only include datetime fields if they have values (not empty strings)
+    if (updates.openDateTime) updateData.open_datetime = updates.openDateTime;
+    if (updates.closeDateTime) updateData.close_datetime = updates.closeDateTime;
 
     const { data, error } = await supabase
       .from('trades')
@@ -242,6 +249,8 @@ class SupabaseTradeService implements ITradeService {
       tags: tags,
       result: supabaseTrade.result ?? null,
       date: supabaseTrade.date,
+      openDateTime: supabaseTrade.open_datetime || undefined,
+      closeDateTime: supabaseTrade.close_datetime || undefined,
       createdAt: supabaseTrade.created_at,
       updatedAt: supabaseTrade.updated_at,
     };

@@ -10,7 +10,9 @@ export interface Trade {
   result: 'profit' | 'loss';
   notes: string;
   tags: string[];
-  date: string; // ISO date string (YYYY-MM-DD)
+  date: string; // ISO date string (YYYY-MM-DD) - derived from openDateTime or set manually
+  openDateTime?: string; // ISO datetime string (YYYY-MM-DDTHH:MM) - when trade was opened
+  closeDateTime?: string; // ISO datetime string (YYYY-MM-DDTHH:MM) - when trade was closed
   createdAt: string;
   updatedAt: string;
 }
@@ -33,7 +35,9 @@ export interface TradeFormData {
   result: 'profit' | 'loss';
   notes: string;
   tags: string[];
-  date: string;
+  date: string; // ISO date string (YYYY-MM-DD) - derived from openDateTime or set manually
+  openDateTime?: string; // ISO datetime string (YYYY-MM-DDTHH:MM) - when trade was opened
+  closeDateTime?: string; // ISO datetime string (YYYY-MM-DDTHH:MM) - when trade was closed
 }
 
 // User profile type

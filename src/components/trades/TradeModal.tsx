@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { TradeFormData } from '@/lib/types';
+import { ChevronDown, ChevronUp, Clock } from 'lucide-react';
 
 interface TradeModalProps {
   isOpen: boolean;
@@ -18,6 +19,22 @@ interface TradeModalProps {
   isLoading?: boolean;
   defaultDate?: string;
 }
+
+// Helper function to format datetime for datetime-local input
+const formatDateTimeForInput = (datetime: string | undefined): string => {
+  if (!datetime) return '';
+  const date = new Date(datetime);
+  if (isNaN(date.getTime())) return ''; // Invalid date
+  
+  // Format as YYYY-MM-DDTHH:mm
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
 
 export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading = false, defaultDate }: TradeModalProps) {
   const [formData, setFormData] = useState<TradeFormData>({
@@ -30,9 +47,12 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
     notes: trade?.notes || '',
     tags: trade?.tags || [],
     date: trade?.date || defaultDate || new Date().toISOString().split('T')[0],
+    openDateTime: trade?.openDateTime || '',
+    closeDateTime: trade?.closeDateTime || '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Update form data when trade prop changes (for editing)
   useEffect(() => {
@@ -47,6 +67,8 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
         notes: trade.notes || '',
         tags: trade.tags || [],
         date: trade.date || new Date().toISOString().split('T')[0],
+        openDateTime: formatDateTimeForInput(trade.openDateTime),
+        closeDateTime: formatDateTimeForInput(trade.closeDateTime),
       });
     } else {
       // Reset form for new trade
@@ -60,6 +82,8 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
         notes: '',
         tags: [],
         date: defaultDate || new Date().toISOString().split('T')[0],
+        openDateTime: '',
+        closeDateTime: '',
       });
     }
   }, [trade, defaultDate]);
@@ -136,6 +160,52 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
       if (selectedDate > today) {
         newErrors.date = 'Cannot create trades for future dates';
       }
+
+      // Validate that date matches openDateTime if provided
+      if (formData.openDateTime) {
+        const openDate = formData.openDateTime.split('T')[0];
+        if (openDate !== formData.date) {
+          newErrors.date = 'Date must match the open date/time';
+        }
+      }
+      // Note: closeDateTime can be on a different day (for trades spanning multiple days)
+
+      // Validate that close datetime is after open datetime
+      if (formData.openDateTime && formData.closeDateTime) {
+        const openDt = new Date(formData.openDateTime);
+        const closeDt = new Date(formData.closeDateTime);
+        if (closeDt <= openDt) {
+          newErrors.closeDateTime = 'Close date/time must be after open date/time';
+        }
+        
+        // Validate minimum trade duration (1 minute)
+        const diffMs = closeDt.getTime() - openDt.getTime();
+        const diffMinutes = diffMs / 60000;
+        if (diffMinutes < 1) {
+          newErrors.closeDateTime = 'Trade duration must be at least 1 minute';
+        }
+      }
+
+      // Validate that open datetime is not in the future
+      if (formData.openDateTime) {
+        const openDt = new Date(formData.openDateTime);
+        if (openDt > new Date()) {
+          newErrors.openDateTime = 'Open date/time cannot be in the future';
+        }
+      }
+
+      // Validate that close datetime is not in the future
+      if (formData.closeDateTime) {
+        const closeDt = new Date(formData.closeDateTime);
+        if (closeDt > new Date()) {
+          newErrors.closeDateTime = 'Close date/time cannot be in the future';
+        }
+      }
+    }
+
+    // Validate tags limit (maximum 10)
+    if (formData.tags && formData.tags.length > 10) {
+      newErrors.tags = 'Maximum 10 tags allowed';
     }
 
     setErrors(newErrors);
@@ -170,7 +240,7 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg bg-card border-border">
+      <DialogContent className="sm:max-w-lg bg-card border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-foreground">
             {trade ? 'Edit Trade' : 'Add New Trade'}
@@ -180,7 +250,7 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="symbol" className="text-foreground">
@@ -289,6 +359,97 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
             </div>
           </div>
 
+          {/* Advanced Section Toggle */}
+          <div className="flex items-center justify-between pt-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="text-sm text-muted-foreground hover:text-foreground"
+              disabled={isLoading}
+            >
+              {showAdvanced ? (
+                <>
+                  <ChevronUp className="w-4 h-4 mr-1" />
+                  Hide Advanced Options
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-4 h-4 mr-1" />
+                  Show Advanced Options
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Advanced Section */}
+          {showAdvanced && (
+            <div className="space-y-4 p-4 rounded-lg bg-muted/30 border border-dashed border-blue-500">
+              <div className="flex items-center gap-2 mb-4">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">Trade Timing</span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="openDateTime" className="text-foreground text-sm">
+                    Open Date & Time
+                  </Label>
+                  <Input
+                    id="openDateTime"
+                    type="datetime-local"
+                    value={formData.openDateTime || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      handleInputChange('openDateTime', value);
+                      // Auto-update date field from openDateTime
+                      if (value) {
+                        const datePart = value.split('T')[0];
+                        handleInputChange('date', datePart);
+                      }
+                    }}
+                    className="bg-input border-border text-foreground text-sm"
+                    disabled={isLoading}
+                  />
+                  {errors.openDateTime && <p className="text-sm text-destructive">{errors.openDateTime}</p>}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="closeDateTime" className="text-foreground text-sm">
+                    Close Date & Time
+                  </Label>
+                  <Input
+                    id="closeDateTime"
+                    type="datetime-local"
+                    value={formData.closeDateTime || ''}
+                    onChange={(e) => handleInputChange('closeDateTime', e.target.value)}
+                    className="bg-input border-border text-foreground text-sm"
+                    disabled={isLoading}
+                  />
+                  {errors.closeDateTime && <p className="text-sm text-destructive">{errors.closeDateTime}</p>}
+                </div>
+              </div>
+              
+              {formData.openDateTime && formData.closeDateTime && (
+                <div className="text-xs text-muted-foreground">
+                  Holding period: {(() => {
+                    const open = new Date(formData.openDateTime!);
+                    const close = new Date(formData.closeDateTime!);
+                    const diffMs = close.getTime() - open.getTime();
+                    const diffMins = Math.floor(diffMs / 60000);
+                    const hours = Math.floor(diffMins / 60);
+                    const mins = diffMins % 60;
+                    if (hours > 0) {
+                      return `${hours}h ${mins}m`;
+                    }
+                    return `${mins}m`;
+                  })()}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="date" className="text-foreground">
@@ -301,6 +462,7 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
                 onChange={(e) => handleInputChange('date', e.target.value)}
                 className="bg-input border-border text-foreground"
                 disabled={isLoading || !!defaultDate}
+                max={new Date().toISOString().split('T')[0]}
               />
               {errors.date && <p className="text-sm text-destructive">{errors.date}</p>}
             </div>

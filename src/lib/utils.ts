@@ -59,6 +59,19 @@ export function formatDate(dateString: string): string {
   }).format(date);
 }
 
+// Format datetime for display (includes time)
+export function formatDateTime(dateTimeString: string): string {
+  const date = new Date(dateTimeString);
+  return new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date);
+}
+
 // Format date for input field (YYYY-MM-DD)
 export function formatDateForInput(dateString: string): string {
   const date = new Date(dateString);

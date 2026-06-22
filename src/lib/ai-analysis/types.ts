@@ -140,6 +140,8 @@ export interface AIAnalysisRequest {
     notes: string;
     tags: string[];
     date: string;
+    openDateTime?: string; // ISO datetime string (YYYY-MM-DDTHH:MM) - when trade was opened
+    closeDateTime?: string; // ISO datetime string (YYYY-MM-DDTHH:MM) - when trade was closed
   }>;
 }
 
