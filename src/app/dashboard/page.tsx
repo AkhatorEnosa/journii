@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -272,6 +272,46 @@ export default function DashboardPage() {
     setCurrentMonth(new Date());
   };
 
+  // Get weekly pnl for current week
+  const getWeeklyPnL = () => {
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+    
+    return dailyTotals.reduce((sum, day) => {
+      const dayDate = new Date(day.date + 'T00:00:00');
+      if (dayDate >= startOfWeek && dayDate <= endOfWeek) {
+        return sum + day.totalPnl;
+      }
+      return sum;
+    }, 0);
+  };
+
+  // Get weekly PnL for a specific date's week
+  const getWeekPnLForDate = (date: Date) => {
+    const startOfWeek = new Date(date);
+    startOfWeek.setDate(date.getDate() - date.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+    
+    return dailyTotals.reduce((sum, day) => {
+      const dayDate = new Date(day.date + 'T00:00:00');
+      if (dayDate >= startOfWeek && dayDate <= endOfWeek) {
+        return sum + day.totalPnl;
+      }
+      return sum;
+    }, 0);
+  };
+
+
   // Redirect to home page if not authenticated
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -494,8 +534,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Calendar View */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <div className="lg:col-span-3">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="lg:col-span-9">
             <Card className="bg-card border-border">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -554,50 +594,98 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Week Days Header */}
-                    <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground font-medium">
+                    <div className="grid grid-cols-8 gap-1 text-center text-xs text-muted-foreground font-medium">
                       {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
                         <div key={day} className="p-2 border rounded-full">{day}</div>
                       ))}
+                      <div className="p-2 border rounded-full">Week PnL</div>
                     </div>
 
                     {/* Calendar Grid */}
-                    <div className="grid grid-cols-7 gap-1">
-                      {getCalendarDays().map((day, index) => {
-                        const dailyTotal = getDailyTotalForDate(day);
-                        const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
-                        const isToday = day.toDateString() === new Date().toDateString();
-                        const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                    <div className="space-y-1">
+                      {(() => {
+                        const days = getCalendarDays();
+                        const rows: React.JSX.Element[] = [];
+                        
+                        for (let i = 0; i < days.length; i += 7) {
+                          const weekDays = days.slice(i, i + 7);
+                          const saturday = weekDays.find(d => d.getDay() === 6) || weekDays[weekDays.length - 1];
+                          const weekPnL = getWeekPnLForDate(saturday);
+                          const hasTradesThisWeek = dailyTotals.some(d => {
+                            const dayDate = new Date(d.date + 'T00:00:00');
+                            const startOfWeek = new Date(saturday);
+                            startOfWeek.setDate(saturday.getDate() - saturday.getDay());
+                            const endOfWeek = new Date(startOfWeek);
+                            endOfWeek.setDate(startOfWeek.getDate() + 6);
+                            return dayDate >= startOfWeek && dayDate <= endOfWeek;
+                          });
 
-                        return (
-                          <div
-                            key={index}
-                            className={`min-h-20 p-1 md:p-2 wrap-break-word border border-border rounded-lg cursor-pointer transition-colors hover:bg-accent 
-                              ${!isCurrentMonth ? 'opacity-50' : ''} 
-                              ${isToday && !dailyTotal ? 'ring-2 ring-primary' : ''}
-                              ${dailyTotal ? `${getPnLBgColor(dailyTotal.totalPnl)} ${getPnLBorderColor(dailyTotal.totalPnl)}` : ''}
-                            `}
-                            onClick={() => handleDateClick(day)}
-                          >
-                            <div className={`text-right text-xs ${
-                              isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'
-                            } ${isWeekend ? 'font-medium' : ''}`}>
-                              <span className='bg-background px-1 rounded'>
-                                {day.getDate()}
-                              </span>
-                            </div>
-                            {dailyTotal && (
-                              <div className="md:text-center space-y-1">
-                                <div className={`text-xs font-bold ${getPnLColor(dailyTotal.totalPnl)} line-clamp-1`}>
-                                  {formatPnL(dailyTotal.totalPnl)}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {dailyTotal.tradeCount} trade{dailyTotal.tradeCount !== 1 ? 's' : ''}
-                                </div>
+                          rows.push(
+                            <div key={i} className="grid grid-cols-8 gap-1">
+                              {weekDays.map((day, dayIndex) => {
+                                const dailyTotal = getDailyTotalForDate(day);
+                                const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
+                                const isToday = day.toDateString() === new Date().toDateString();
+                                const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+
+                                return (
+                                  <div
+                                    key={dayIndex}
+                                    className={`min-h-20 p-1 md:p-2 wrap-break-word border border-border rounded-lg cursor-pointer transition-colors hover:bg-accent 
+                                      ${!isCurrentMonth ? 'opacity-50' : ''} 
+                                      ${isToday && !dailyTotal ? 'ring-2 ring-primary' : ''}
+                                      ${dailyTotal ? `${getPnLBgColor(dailyTotal.totalPnl)} ${getPnLBorderColor(dailyTotal.totalPnl)}` : ''}
+                                    `}
+                                    onClick={() => handleDateClick(day)}
+                                  >
+                                    <div className={`text-right text-xs ${
+                                      isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'
+                                    } ${isWeekend ? 'font-medium' : ''}`}>
+                                      <span className='bg-background px-1 rounded'>
+                                        {day.getDate()}
+                                      </span>
+                                    </div>
+                                    {dailyTotal && (
+                                      <div className="md:text-center space-y-1">
+                                        <div className={`text-xs font-bold ${getPnLColor(dailyTotal.totalPnl)} line-clamp-1`}>
+                                          {formatPnL(dailyTotal.totalPnl)}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {dailyTotal.tradeCount} trade{dailyTotal.tradeCount !== 1 ? 's' : ''}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                              
+                              {/* Weekly PnL Column */}
+                              <div
+                                className={`min-h-20 p-1 md:p-2 flex flex-col items-center justify-center border border-border rounded-lg 
+                                  ${hasTradesThisWeek ? `${getPnLBgColor(weekPnL)} ${getPnLBorderColor(weekPnL)}` : 'bg-muted/10'}
+                                `}
+                              >
+                                {hasTradesThisWeek ? (
+                                  <div className="text-center space-y-1">
+                                    <div className={`text-sm font-extrabold ${getPnLColor(weekPnL)}`}>
+                                      {formatPnL(weekPnL)}
+                                    </div>
+                                    <div className="text-[10px] text-muted-foreground">
+                                      this week
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-xs text-muted-foreground text-center">
+                                    No trades
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                            </div>
+                          );
+                        }
+                        
+                        return rows;
+                      })()}
                     </div>
 
                     {/* Legend */}
@@ -621,46 +709,91 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          <div className="lg:col-span-1 sticky top-10">
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle className="text-foreground">Quick Actions</CardTitle>
-                <CardDescription className="text-muted-foreground">
-                  Manage your trades
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button
-                  onClick={() => setIsModalOpen(true)}
-                  className="w-full bg-primary hover:bg-primary/90"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Trade
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => router.push('/analytics')}
-                  className="w-full border-border text-foreground hover:bg-accent"
-                >
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  View Analytics
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => router.push('/goals')}
-                  className="w-full border-border text-foreground hover:bg-accent"
-                >
-                  <Target className="w-4 h-4 mr-2" />
-                  Goals & Challenges
-                </Button>
-                <TradeList 
-                  selectedDate={selectedDate} 
-                  isOpen={isTradeListOpen} 
-                  onOpenChange={setIsTradeListOpen}
-                  onTradeMutation={loadTradesForTimeFilter}
-                />
-              </CardContent>
-            </Card>
+          {/* Weekly PnL Sidebar */}
+          <div className="lg:col-span-3">
+            <div className="space-y-6">
+              <Card className="bg-card border-border sticky top-24">
+                <CardHeader>
+                  <CardTitle className="text-foreground text-lg">This Week's PnL</CardTitle>
+                  <CardDescription className="text-muted-foreground text-sm">
+                    Week-to-date summary
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className={`text-3xl font-bold ${getPnLColor(getWeeklyPnL())}`}>
+                    {formatPnL(getWeeklyPnL())}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    {getWeeklyPnL() >= 0 ? (
+                      <TrendingUp className="w-4 h-4 text-emerald-500" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4 text-rose-500" />
+                    )}
+                    <span className="text-muted-foreground">
+                      {getWeeklyPnL() >= 0 ? 'Profit' : 'Loss'} this week
+                    </span>
+                  </div>
+                  <div className="pt-4 border-t border-border">
+                    <div className="text-sm text-muted-foreground">
+                      Trading days this week
+                    </div>
+                    <div className="text-lg font-semibold text-foreground mt-1">
+                      {dailyTotals.filter(d => {
+                        const now = new Date();
+                        const startOfWeek = new Date(now);
+                        startOfWeek.setDate(now.getDate() - now.getDay());
+                        startOfWeek.setHours(0, 0, 0, 0);
+                        const dayDate = new Date(d.date + 'T00:00:00');
+                        return dayDate >= startOfWeek && dayDate <= now;
+                      }).length} / {(() => {
+                        const now = new Date();
+                        return now.getDay() + 1;
+                      })()}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-card border-border sticky top-[28rem]">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Quick Actions</CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Manage your trades
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Button
+                    onClick={() => setIsModalOpen(true)}
+                    className="w-full bg-primary hover:bg-primary/90"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Trade
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push('/analytics')}
+                    className="w-full border-border text-foreground hover:bg-accent"
+                  >
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    View Analytics
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push('/goals')}
+                    className="w-full border-border text-foreground hover:bg-accent"
+                  >
+                    <Target className="w-4 h-4 mr-2" />
+                    Goals & Challenges
+                  </Button>
+                  <TradeList 
+                    selectedDate={selectedDate} 
+                    isOpen={isTradeListOpen} 
+                    onOpenChange={setIsTradeListOpen}
+                    onTradeMutation={loadTradesForTimeFilter}
+                  />
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </main>
