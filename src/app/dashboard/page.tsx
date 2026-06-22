@@ -537,7 +537,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-9">
             <Card className="bg-card border-border">
-              <CardHeader>
+              <CardHeader className='mb-5'>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-foreground">Trade Calendar</CardTitle>
