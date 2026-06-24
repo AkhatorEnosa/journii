@@ -39,6 +39,27 @@ export function detectBehavioralPatterns(trades: Trade[]): BehavioralPattern[] {
 }
 
 /**
+ * Calculate hours between two trades using datetime if available, otherwise date
+ */
+function getHoursBetweenTrades(trade1: Trade, trade2: Trade): { hours: number; hasTimeData: boolean } {
+  // Try to use closeDateTime/openDateTime first
+  if (trade1.closeDateTime && trade2.openDateTime) {
+    const closeTime = new Date(trade1.closeDateTime);
+    const openTime = new Date(trade2.openDateTime);
+    if (!isNaN(closeTime.getTime()) && !isNaN(openTime.getTime())) {
+      const hoursDiff = (openTime.getTime() - closeTime.getTime()) / (1000 * 60 * 60);
+      return { hours: hoursDiff, hasTimeData: true };
+    }
+  }
+  
+  // Fall back to date-only comparison
+  const date1 = new Date(trade1.date);
+  const date2 = new Date(trade2.date);
+  const hoursDiff = (date2.getTime() - date1.getTime()) / (1000 * 60 * 60);
+  return { hours: hoursDiff, hasTimeData: false };
+}
+
+/**
  * Detect revenge trading patterns (trading immediately after losses)
  */
 function detectRevengeTrading(trades: Trade[]): BehavioralPattern | null {
@@ -49,15 +70,29 @@ function detectRevengeTrading(trades: Trade[]): BehavioralPattern | null {
   
   for (let i = 0; i < trades.length - 1; i++) {
     if (trades[i].result === 'loss') {
-      // Check if next trade is within 24 hours (same day or next day)
-      const currentDate = new Date(trades[i].date);
-      const nextDate = new Date(trades[i + 1].date);
-      const hoursDiff = (nextDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60);
+      const { hours: hoursDiff, hasTimeData } = getHoursBetweenTrades(trades[i], trades[i + 1]);
       
-      if (hoursDiff <= 24 && trades[i + 1].result === 'loss') {
+      // Only consider trades with datetime data for accurate time-based analysis
+      // For trades without datetime, we can't accurately determine if it's revenge trading
+      if (hasTimeData && hoursDiff <= 24 && trades[i + 1].result === 'loss') {
         revengeTradeCount++;
         if (evidence.length < 3) {
-          evidence.push(`Loss on ${trades[i].date} followed by another loss on ${trades[i + 1].date} (${Math.round(hoursDiff)}h apart)`);
+          const timeDesc = hoursDiff < 1 
+            ? `${Math.round(hoursDiff * 60)} minutes` 
+            : `${Math.round(hoursDiff)} hours`;
+          evidence.push(`Loss on ${trades[i].date} followed by another loss on ${trades[i + 1].date} (${timeDesc} apart)`);
+        }
+      } else if (!hasTimeData && trades[i + 1].result === 'loss') {
+        // For trades without time data, check if it's the same day or next day
+        const date1 = new Date(trades[i].date);
+        const date2 = new Date(trades[i + 1].date);
+        const daysDiff = (date2.getTime() - date1.getTime()) / (1000 * 60 * 60 * 24);
+        
+        if (daysDiff <= 1) {
+          revengeTradeCount++;
+          if (evidence.length < 3) {
+            evidence.push(`Loss on ${trades[i].date} followed by another loss on ${trades[i + 1].date} (same/next day, no time data)`);
+          }
         }
       }
     }

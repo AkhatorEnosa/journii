@@ -273,10 +273,35 @@ export function analyzeMonthlyPerformance(trades: Trade[]): MonthlyPerformance[]
 }
 
 /**
- * Analyze time-based patterns
+ * Get the time period for a given hour
+ */
+function getTimePeriod(hour: number): 'morning' | 'afternoon' | 'evening' | 'night' {
+  if (hour >= 6 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 18) return 'afternoon';
+  if (hour >= 18 && hour < 22) return 'evening';
+  return 'night';
+}
+
+/**
+ * Get the trading session for a given hour (UTC-based approximation)
+ */
+function getTradingSession(hour: number): 'asian' | 'london' | 'newyork' | 'overlap' | 'other' {
+  // Approximate trading sessions (UTC)
+  if (hour >= 0 && hour < 8) return 'asian';      // Tokyo/Sydney
+  if (hour >= 8 && hour < 12) return 'london';     // London open
+  if (hour >= 13 && hour < 17) return 'newyork';   // New York
+  if (hour >= 13 && hour < 16) return 'overlap';   // London/NY overlap (most liquid)
+  return 'other';
+}
+
+/**
+ * Analyze time-based patterns using actual trade timestamps
  */
 export function analyzeTimeBasedPatterns(trades: Trade[]): TimeBasedAnalysis {
-  // By day of week
+  // Filter trades that have datetime data
+  const tradesWithTime = trades.filter(t => t.openDateTime && t.closeDateTime);
+  
+  // By day of week (using all trades)
   const dayOfWeekMap = new Map<number, Trade[]>();
   trades.forEach(trade => {
     const date = new Date(trade.date);
@@ -298,12 +323,23 @@ export function analyzeTimeBasedPatterns(trades: Trade[]): TimeBasedAnalysis {
     }))
     .sort((a, b) => a.tradeCount - b.tradeCount);
 
-  // By time of day (estimated from trade patterns)
+  // By time of day (using actual openDateTime)
   const timePeriods: Array<'morning' | 'afternoon' | 'evening' | 'night'> = ['morning', 'afternoon', 'evening', 'night'];
+  const timePeriodMap = new Map<string, Trade[]>();
+  
+  tradesWithTime.forEach(trade => {
+    const openDate = new Date(trade.openDateTime!);
+    const hour = openDate.getHours();
+    const period = getTimePeriod(hour);
+    
+    if (!timePeriodMap.has(period)) {
+      timePeriodMap.set(period, []);
+    }
+    timePeriodMap.get(period)!.push(trade);
+  });
+
   const byTimeOfDay = timePeriods.map(period => {
-    // Simulate time-based distribution based on trade characteristics
-    // In real implementation, you'd need actual timestamps
-    const periodTrades = trades.slice(0, Math.floor(trades.length / 4));
+    const periodTrades = timePeriodMap.get(period) || [];
     return {
       period,
       tradeCount: periodTrades.length,
@@ -333,6 +369,172 @@ export function analyzeTimeBasedPatterns(trades: Trade[]): TimeBasedAnalysis {
     .sort((a, b) => a.week - b.week);
 
   return { byDayOfWeek, byTimeOfDay, byWeekOfMonth };
+}
+
+/**
+ * Analyze trading time patterns for trades with datetime data
+ */
+export interface TradingTimeAnalysis {
+  byHour: {
+    hour: number;
+    tradeCount: number;
+    winRate: number;
+    totalPnl: number;
+    avgPnl: number;
+  }[];
+  bySession: {
+    session: string;
+    tradeCount: number;
+    winRate: number;
+    totalPnl: number;
+    avgPnl: number;
+  }[];
+  holdingPeriodAnalysis: {
+    category: 'scalp' | 'day' | 'swing' | 'position';
+    tradeCount: number;
+    winRate: number;
+    totalPnl: number;
+    avgPnl: number;
+    avgHoldingMinutes: number;
+  }[];
+  bestHours: {
+    hour: number;
+    winRate: number;
+    tradeCount: number;
+  }[];
+  worstHours: {
+    hour: number;
+    winRate: number;
+    tradeCount: number;
+  }[];
+}
+
+/**
+ * Comprehensive time-based analysis for trades with datetime data
+ */
+export function analyzeTradingTimePatterns(trades: Trade[]): TradingTimeAnalysis {
+  // Filter trades that have datetime data
+  const tradesWithTime = trades.filter(t => t.openDateTime && t.closeDateTime);
+  
+  if (tradesWithTime.length === 0) {
+    return {
+      byHour: [],
+      bySession: [],
+      holdingPeriodAnalysis: [],
+      bestHours: [],
+      worstHours: [],
+    };
+  }
+
+  // Analysis by hour of day
+  const hourMap = new Map<number, Trade[]>();
+  tradesWithTime.forEach(trade => {
+    const openDate = new Date(trade.openDateTime!);
+    const hour = openDate.getHours();
+    if (!hourMap.has(hour)) {
+      hourMap.set(hour, []);
+    }
+    hourMap.get(hour)!.push(trade);
+  });
+
+  const byHour = Array.from(hourMap.entries())
+    .map(([hour, hourTrades]) => ({
+      hour,
+      tradeCount: hourTrades.length,
+      winRate: (hourTrades.filter(t => t.result === 'profit').length / hourTrades.length) * 100,
+      totalPnl: hourTrades.reduce((sum, t) => sum + t.pnl, 0),
+      avgPnl: hourTrades.reduce((sum, t) => sum + t.pnl, 0) / hourTrades.length,
+    }))
+    .sort((a, b) => a.hour - b.hour);
+
+  // Analysis by trading session
+  const sessionMap = new Map<string, Trade[]>();
+  tradesWithTime.forEach(trade => {
+    const openDate = new Date(trade.openDateTime!);
+    const hour = openDate.getHours();
+    const session = getTradingSession(hour);
+    if (!sessionMap.has(session)) {
+      sessionMap.set(session, []);
+    }
+    sessionMap.get(session)!.push(trade);
+  });
+
+  const sessionNames: Record<string, string> = {
+    asian: 'Asian Session',
+    london: 'London Session',
+    newyork: 'New York Session',
+    overlap: 'London/NY Overlap',
+    other: 'Other Hours',
+  };
+
+  const bySession = Array.from(sessionMap.entries())
+    .map(([session, sessionTrades]) => ({
+      session: sessionNames[session] || session,
+      tradeCount: sessionTrades.length,
+      winRate: (sessionTrades.filter(t => t.result === 'profit').length / sessionTrades.length) * 100,
+      totalPnl: sessionTrades.reduce((sum, t) => sum + t.pnl, 0),
+      avgPnl: sessionTrades.reduce((sum, t) => sum + t.pnl, 0) / sessionTrades.length,
+    }))
+    .sort((a, b) => b.tradeCount - a.tradeCount);
+
+  // Analysis by holding period
+  const holdingPeriodCategories = [
+    { category: 'scalp' as const, maxMinutes: 60 },           // < 1 hour
+    { category: 'day' as const, maxMinutes: 480 },            // 1-8 hours
+    { category: 'swing' as const, maxMinutes: 2880 },         // 8 hours - 2 days
+    { category: 'position' as const, maxMinutes: Infinity },  // > 2 days
+  ];
+
+  const holdingPeriodAnalysis = holdingPeriodCategories.map(({ category, maxMinutes }) => {
+    const categoryTrades = tradesWithTime.filter(trade => {
+      const open = new Date(trade.openDateTime!);
+      const close = new Date(trade.closeDateTime!);
+      const holdingMinutes = (close.getTime() - open.getTime()) / 60000;
+      return holdingMinutes <= maxMinutes;
+    }).filter(trade => {
+      // Also ensure it's not in a lower category
+      const lowerMax = holdingPeriodCategories.find(c => c.category === category)?.maxMinutes;
+      if (category === 'scalp') return true;
+      const prevCategory = holdingPeriodCategories[holdingPeriodCategories.findIndex(c => c.category === category) - 1];
+      if (!prevCategory) return true;
+      const open = new Date(trade.openDateTime!);
+      const close = new Date(trade.closeDateTime!);
+      const holdingMinutes = (close.getTime() - open.getTime()) / 60000;
+      return holdingMinutes > prevCategory.maxMinutes;
+    });
+
+    if (categoryTrades.length === 0) {
+      return { category, tradeCount: 0, winRate: 0, totalPnl: 0, avgPnl: 0, avgHoldingMinutes: 0 };
+    }
+
+    const avgHoldingMinutes = categoryTrades.reduce((sum, trade) => {
+      const open = new Date(trade.openDateTime!);
+      const close = new Date(trade.closeDateTime!);
+      return sum + (close.getTime() - open.getTime()) / 60000;
+    }, 0) / categoryTrades.length;
+
+    return {
+      category,
+      tradeCount: categoryTrades.length,
+      winRate: (categoryTrades.filter(t => t.result === 'profit').length / categoryTrades.length) * 100,
+      totalPnl: categoryTrades.reduce((sum, t) => sum + t.pnl, 0),
+      avgPnl: categoryTrades.reduce((sum, t) => sum + t.pnl, 0) / categoryTrades.length,
+      avgHoldingMinutes: Math.round(avgHoldingMinutes),
+    };
+  });
+
+  // Find best and worst hours
+  const sortedByWinRate = [...byHour].sort((a, b) => b.winRate - a.winRate);
+  const bestHours = sortedByWinRate.slice(0, 5).filter(h => h.tradeCount >= 2); // Min 2 trades for reliability
+  const worstHours = sortedByWinRate.slice(-5).reverse().filter(h => h.tradeCount >= 2);
+
+  return {
+    byHour,
+    bySession,
+    holdingPeriodAnalysis,
+    bestHours,
+    worstHours,
+  };
 }
 
 // Helper functions for advanced metrics
@@ -494,6 +696,8 @@ export function prepareTradesForAI(trades: Trade[]) {
     notes: trade.notes,
     tags: trade.tags,
     date: trade.date,
+    openDateTime: trade.openDateTime,
+    closeDateTime: trade.closeDateTime,
   }));
 }
 
