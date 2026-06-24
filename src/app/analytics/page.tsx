@@ -398,7 +398,7 @@ export default function AnalyticsPage() {
 
       <main className="container mx-auto px-4 py-8">
         {/* Summary Stats - Row 1 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
               <CardDescription className="text-muted-foreground">Total PnL</CardDescription>
@@ -457,7 +457,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Summary Stats - Row 2 (Advanced Metrics) */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
               <CardDescription className="text-muted-foreground">Profit Factor</CardDescription>
@@ -476,9 +476,9 @@ export default function AnalyticsPage() {
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
               <CardDescription className="text-muted-foreground">Avg Win / Avg Loss</CardDescription>
-              <CardTitle className="text-2xl font-bold">
+              <CardTitle className="text-2xl font-bold overflow-hidden text-wrap">
                 <span className={`${getPnLColor(averageWin)}`}>{formatPnL(averageWin)}</span>
-                <span className="text-muted-foreground mx-1">/</span>
+                <span className="text-muted-foreground mx-1"> / </span>
                 <span className={`${getPnLColor(-averageLoss)}`}>{formatPnL(-averageLoss)}</span>
               </CardTitle>
             </CardHeader>
@@ -493,9 +493,9 @@ export default function AnalyticsPage() {
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
               <CardDescription className="text-muted-foreground">Best / Worst Trade</CardDescription>
-              <CardTitle className="text-2xl font-bold">
-                <span className={`${getPnLColor(bestTrade)}`}>{formatPnL(bestTrade)}</span>
-                <span className="text-muted-foreground mx-1">/</span>
+              <CardTitle className="text-2xl font-bold overflow-hidden text-wrap">
+                <span className={`${getPnLColor(bestTrade)} `}>{formatPnL(bestTrade)}</span>
+                <span className="text-muted-foreground mx-1"> / </span>
                 <span className={`${getPnLColor(worstTrade)}`}>{formatPnL(worstTrade)}</span>
               </CardTitle>
             </CardHeader>
