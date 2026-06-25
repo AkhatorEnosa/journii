@@ -13,6 +13,8 @@ export interface Trade {
   date: string; // ISO date string (YYYY-MM-DD) - derived from openDateTime or set manually
   openDateTime?: string; // ISO datetime string (YYYY-MM-DDTHH:MM) - when trade was opened
   closeDateTime?: string; // ISO datetime string (YYYY-MM-DDTHH:MM) - when trade was closed
+  followedPlan?: boolean; // Whether the trader followed their trading plan
+  planId?: string; // Reference to the trading plan used (if followedPlan is true)
   createdAt: string;
   updatedAt: string;
 }
@@ -38,6 +40,8 @@ export interface TradeFormData {
   date: string; // ISO date string (YYYY-MM-DD) - derived from openDateTime or set manually
   openDateTime?: string; // ISO datetime string (YYYY-MM-DDTHH:MM) - when trade was opened
   closeDateTime?: string; // ISO datetime string (YYYY-MM-DDTHH:MM) - when trade was closed
+  followedPlan?: boolean; // Whether the trader followed their trading plan
+  planId?: string; // Reference to the trading plan used
 }
 
 // User profile type
@@ -90,4 +94,41 @@ export interface GoalProgress {
   daysRemaining: number;
   isAchieved: boolean;
   tradeCount: number;
+}
+
+// Trading Plan types
+export type TradingPlanStatus = 'active' | 'archived';
+
+export interface TradingPlan {
+  id: string;
+  userId: string;
+  name: string;
+  description: string;
+  
+  // Instruments and sessions
+  instruments: string[]; // e.g., ['XAUUSD', 'BTCUSD']
+  tradingSessions: string; // Description of preferred trading times
+  
+  // Rules and criteria
+  entryRules: string; // Conditions for entering trades
+  exitRules: string; // Conditions for exiting trades
+  riskManagement: string; // Position sizing, max risk, stop loss rules
+  
+  // Psychology and discipline
+  psychologyRules: string; // Mental state requirements, emotional rules
+  
+  status: TradingPlanStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TradingPlanFormData {
+  name: string;
+  description: string;
+  instruments: string[];
+  tradingSessions: string;
+  entryRules: string;
+  exitRules: string;
+  riskManagement: string;
+  psychologyRules: string;
 }

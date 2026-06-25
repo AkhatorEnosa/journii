@@ -8,8 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { TradeFormData } from '@/lib/types';
-import { ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { TradeFormData, TradingPlan } from '@/lib/types';
+import { ChevronDown, ChevronUp, Clock, Target, Loader2 } from 'lucide-react';
+import { tradingPlanService } from '@/lib/store';
+import { useUser } from '@clerk/nextjs';
 
 interface TradeModalProps {
   isOpen: boolean;
@@ -18,6 +20,27 @@ interface TradeModalProps {
   trade?: TradeFormData;
   isLoading?: boolean;
   defaultDate?: string;
+}
+
+// Hook to get active trading plans for the user
+function useActiveTradingPlans() {
+  const { user } = useUser();
+  const [plans, setPlans] = useState<TradingPlan[]>([]);
+  const [isLoadingPlans, setIsLoadingPlans] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setIsLoadingPlans(true);
+      tradingPlanService.getActiveTradingPlans(user.id)
+        .then(setPlans)
+        .catch(console.error)
+        .finally(() => setIsLoadingPlans(false));
+    } else {
+      setPlans([]);
+    }
+  }, [user]);
+
+  return { plans, isLoadingPlans };
 }
 
 // Helper function to format datetime for datetime-local input
@@ -37,6 +60,8 @@ const formatDateTimeForInput = (datetime: string | undefined): string => {
 };
 
 export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading = false, defaultDate }: TradeModalProps) {
+  const { plans, isLoadingPlans } = useActiveTradingPlans();
+  
   const [formData, setFormData] = useState<TradeFormData>({
     symbol: trade?.symbol || '',
     entryPrice: trade?.entryPrice || 0,
@@ -49,10 +74,25 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
     date: trade?.date || defaultDate || new Date().toISOString().split('T')[0],
     openDateTime: trade?.openDateTime || '',
     closeDateTime: trade?.closeDateTime || '',
+    followedPlan: trade?.followedPlan,
+    planId: trade?.planId,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Reset isSubmitting when modal closes or trade changes
+  useEffect(() => {
+    if (!isOpen) {
+      setIsSubmitting(false);
+    }
+  }, [isOpen]);
+
+  // Also reset when trade prop changes (editing a different trade)
+  useEffect(() => {
+    setIsSubmitting(false);
+  }, [trade]);
 
   // Update form data when trade prop changes (for editing)
   useEffect(() => {
@@ -69,6 +109,8 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
         date: trade.date || new Date().toISOString().split('T')[0],
         openDateTime: formatDateTimeForInput(trade.openDateTime),
         closeDateTime: formatDateTimeForInput(trade.closeDateTime),
+        followedPlan: trade.followedPlan,
+        planId: trade.planId,
       });
     } else {
       // Reset form for new trade
@@ -84,6 +126,8 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
         date: defaultDate || new Date().toISOString().split('T')[0],
         openDateTime: '',
         closeDateTime: '',
+        followedPlan: undefined,
+        planId: undefined,
       });
     }
   }, [trade, defaultDate]);
@@ -215,9 +259,13 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    if (!validateForm() || isSubmitting || isLoading) {
       return;
     }
+
+    // Set local submitting state immediately to prevent double-clicks
+    // State will persist until modal closes or trade changes
+    setIsSubmitting(true);
 
     // Convert symbol to lowercase before submitting
     const dataWithLowercaseSymbol = {
@@ -226,6 +274,7 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
     };
 
     onSubmit(dataWithLowercaseSymbol);
+    // Note: isSubmitting will be reset when modal closes (via useEffect)
   };
 
   const handleTagAdd = (tag: string) => {
@@ -508,6 +557,73 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
             </div>
           </div>
 
+          {/* Trading Plan Compliance Section */}
+          <div className="space-y-4 p-4 rounded-lg bg-muted/30 border border-border">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground">Trading Plan Compliance</span>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="followedPlan" className="text-foreground text-sm">
+                  Followed Trading Plan?
+                </Label>
+                <Select
+                  value={formData.followedPlan !== undefined ? (formData.followedPlan ? 'yes' : 'no') : ''}
+                  onValueChange={(value) => {
+                    const followedPlan = value === 'yes' ? true : (value === 'no' ? false : undefined);
+                    handleInputChange('followedPlan', followedPlan);
+                    // Clear planId if they didn't follow a plan
+                    if (followedPlan !== true) {
+                      handleInputChange('planId', undefined);
+                    }
+                  }}
+                  disabled={isLoading || isLoadingPlans}
+                >
+                  <SelectTrigger className="bg-input border-border text-foreground w-full">
+                    <SelectValue placeholder="Select...">
+                      {formData.followedPlan === true ? 'Yes' : formData.followedPlan === false ? 'No' : 'Select...'}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="yes">Yes</SelectItem>
+                    <SelectItem value="no">No</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {formData.followedPlan === true && plans.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="planId" className="text-foreground text-sm">
+                    Which Plan?
+                  </Label>
+                  <Select
+                    value={formData.planId || ''}
+                    onValueChange={(value) => handleInputChange('planId', value)}
+                    disabled={isLoading || isLoadingPlans}
+                  >
+                    <SelectTrigger className="bg-input border-border text-foreground w-full">
+                      <SelectValue placeholder="Select plan...">
+                        {(() => {
+                          const selectedPlan = plans.find(p => p.id === formData.planId);
+                          return selectedPlan ? selectedPlan.name : 'Select plan...';
+                        })()}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      {plans.map((plan) => (
+                        <SelectItem key={plan.id} value={plan.id}>
+                          {plan.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="notes" className="text-foreground">
               Notes
@@ -529,16 +645,23 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
               variant="ghost"
               onClick={onClose}
               className="text-muted-foreground hover:text-foreground"
-              disabled={isLoading}
+              disabled={isLoading || isSubmitting}
             >
               Cancel
             </Button>
             <Button
               type="submit"
               className="bg-primary hover:bg-primary/90"
-              disabled={isLoading}
+              disabled={isLoading || isSubmitting}
             >
-              {isLoading ? 'Saving...' : trade ? 'Update Trade' : 'Add Trade'}
+              {(isLoading || isSubmitting) ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                trade ? 'Update Trade' : 'Add Trade'
+              )}
             </Button>
           </DialogFooter>
         </form>

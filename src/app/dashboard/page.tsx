@@ -5,15 +5,17 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, TrendingUp, TrendingDown, Target, Download, FileSpreadsheet, FileText, BarChart3, Brain } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Target, Download, FileSpreadsheet, FileText, BarChart3, Brain, ClipboardList } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { formatPnL, getPnLColor, getPnLBgColor, getPnLBorderColor } from '@/lib/utils';
 import { useCreateTrade } from '@/lib/hooks/useTrades';
-import { tradeService } from '@/lib/store';
-import { Trade } from '@/lib/types';
+import { tradeService, tradingPlanService } from '@/lib/store';
+import { Trade, TradingPlan } from '@/lib/types';
 import { exportTradesToCSV, exportTradesToPDF, exportAnalyticsSummaryToPDF } from '@/lib/export';
 import TradeModal from '@/components/trades/TradeModal';
 import TradeList from '@/components/trades/TradeList';
+import TradingPlanModal from '@/components/trading-plans/TradingPlanModal';
+import TradingPlanList from '@/components/trading-plans/TradingPlanList';
 import DashboardHeader from '../sections/DashboardHeader';
 import Footer from '../sections/Footer';
 
@@ -31,6 +33,11 @@ export default function DashboardPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [isTradingPlanModalOpen, setIsTradingPlanModalOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<TradingPlan | null>(null);
+  const [tradingPlans, setTradingPlans] = useState<TradingPlan[]>([]);
+  const [isLoadingPlans, setIsLoadingPlans] = useState(false);
+  const [isSavingPlan, setIsSavingPlan] = useState(false);
 
   // Calculate date range based on time filter
   const getDateRange = () => {
@@ -117,17 +124,17 @@ export default function DashboardPage() {
     try {
       const { startDate, endDate, displayMonth } = getDateRange();
       
-      console.log('[Dashboard] Loading trades for time filter:', { 
-        userId: user.id, 
-        timeFilter,
-        startDate, 
-        endDate 
-      });
+      // console.log('[Dashboard] Loading trades for time filter:', { 
+      //   userId: user.id, 
+      //   timeFilter,
+      //   startDate, 
+      //   endDate 
+      // });
       
       // Fetch trades for the time range
       const trades = await tradeService.getTradesByTimeRange(user.id, startDate, endDate);
       
-      console.log('[Dashboard] Trades loaded:', trades);
+      // console.log('[Dashboard] Trades loaded:', trades);
       
       // Convert trades to daily totals for calendar display
       const dailyMap = new Map<string, Trade[]>();
@@ -165,6 +172,65 @@ export default function DashboardPage() {
   };
 
   const createTradeMutation = useCreateTrade();
+
+  // Load trading plans
+  useEffect(() => {
+    if (isLoaded && isSignedIn && user) {
+      loadTradingPlans();
+    }
+  }, [user, isLoaded, isSignedIn]);
+
+  const loadTradingPlans = async () => {
+    if (!user) return;
+    setIsLoadingPlans(true);
+    try {
+      const plans = await tradingPlanService.getTradingPlans(user.id);
+      setTradingPlans(plans);
+    } catch (err) {
+      console.error('Failed to load trading plans:', err);
+    } finally {
+      setIsLoadingPlans(false);
+    }
+  };
+
+  const handleTradingPlanSubmit = async (planData: any) => {
+    if (!user) return;
+    setIsSavingPlan(true);
+    try {
+      if (editingPlan) {
+        await tradingPlanService.updateTradingPlan(user.id, editingPlan.id, planData);
+      } else {
+        await tradingPlanService.createTradingPlan(user.id, planData);
+      }
+      setIsTradingPlanModalOpen(false);
+      setEditingPlan(null);
+      await loadTradingPlans();
+    } catch (err) {
+      console.error('Failed to save trading plan:', err);
+    } finally {
+      setIsSavingPlan(false);
+    }
+  };
+
+  const handleEditPlan = (plan: TradingPlan) => {
+    setEditingPlan(plan);
+    setIsTradingPlanModalOpen(true);
+  };
+
+  const handleDeletePlan = async (plan: TradingPlan) => {
+    if (!user) return;
+    try {
+      await tradingPlanService.deleteTradingPlan(user.id, plan.id);
+      await loadTradingPlans();
+    } catch (err) {
+      console.error('Failed to delete trading plan:', err);
+    }
+  };
+
+  const handleCreateNewPlan = () => {
+    setEditingPlan(null);
+    setIsTradingPlanModalOpen(true);
+  };
 
   // Calculate stats from daily totals
   const stats = useMemo(() => {
@@ -350,7 +416,16 @@ export default function DashboardPage() {
               <p className="text-sm text-muted-foreground">Welcome back, {user.fullName || user.emailAddresses[0]?.emailAddress}</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => router.push('/trading-plans')}
+              className="border-border text-foreground hover:bg-accent"
+            >
+              <ClipboardList className="w-4 h-4 mr-2" />
+              Trading Plans
+            </Button>
+
             {/* Export Menu */}
             <div className="relative">
               <Button
@@ -809,6 +884,19 @@ export default function DashboardPage() {
         isLoading={createTradeMutation.isPending}
         trade={selectedDate ? { date: selectedDate } as any : undefined}
       />
+
+      {/* Trading Plan Modal */}
+      <TradingPlanModal
+        isOpen={isTradingPlanModalOpen}
+        onClose={() => {
+          setIsTradingPlanModalOpen(false);
+          setEditingPlan(null);
+        }}
+        onSubmit={handleTradingPlanSubmit}
+        plan={editingPlan}
+        isLoading={isSavingPlan}
+      />
+
       <Footer />
     </div>
   );

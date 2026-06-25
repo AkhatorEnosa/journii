@@ -1,6 +1,6 @@
 'use client';
 
-import { Trade, TradeFormData, DailyTotal, Goal, GoalFormData, GoalStatus, GoalProgress } from './types';
+import { Trade, TradeFormData, DailyTotal, Goal, GoalFormData, GoalStatus, GoalProgress, TradingPlan, TradingPlanFormData, TradingPlanStatus } from './types';
 import { generateId } from './utils';
 import { supabase, isSupabaseConfigured } from './supabase/client';
 
@@ -8,6 +8,7 @@ import { supabase, isSupabaseConfigured } from './supabase/client';
 const STORAGE_KEYS = {
   TRADES: 'journii_trades',
   GOALS: 'journii_goals',
+  TRADING_PLANS: 'journii_trading_plans',
   USER: 'journii_user',
 };
 
@@ -89,6 +90,9 @@ class SupabaseTradeService implements ITradeService {
     // Include optional datetime fields only if they have values (not empty strings)
     if (tradeData.openDateTime) tradeToInsert.open_datetime = tradeData.openDateTime;
     if (tradeData.closeDateTime) tradeToInsert.close_datetime = tradeData.closeDateTime;
+    // Include optional plan-related fields only if they have values
+    if (tradeData.followedPlan !== undefined) tradeToInsert.followed_plan = tradeData.followedPlan;
+    if (tradeData.planId) tradeToInsert.plan_id = tradeData.planId;
 
     const { data, error } = await supabase
       .from('trades')
@@ -121,6 +125,8 @@ class SupabaseTradeService implements ITradeService {
     // Only include datetime fields if they have values (not empty strings)
     if (updates.openDateTime) updateData.open_datetime = updates.openDateTime;
     if (updates.closeDateTime) updateData.close_datetime = updates.closeDateTime;
+    if (updates.followedPlan !== undefined) updateData.followed_plan = updates.followedPlan;
+    if (updates.planId !== undefined) updateData.plan_id = updates.planId;
 
     const { data, error } = await supabase
       .from('trades')
@@ -251,6 +257,8 @@ class SupabaseTradeService implements ITradeService {
       date: supabaseTrade.date,
       openDateTime: supabaseTrade.open_datetime || undefined,
       closeDateTime: supabaseTrade.close_datetime || undefined,
+      followedPlan: supabaseTrade.followed_plan ?? undefined,
+      planId: supabaseTrade.plan_id || undefined,
       createdAt: supabaseTrade.created_at,
       updatedAt: supabaseTrade.updated_at,
     };
@@ -807,3 +815,308 @@ class FallbackGoalService implements IGoalService {
 
 // Export singleton instance - uses FallbackGoalService which tries Supabase first, then localStorage
 export const goalService: IGoalService = new FallbackGoalService();
+
+// Trading Plan service interface
+interface ITradingPlanService {
+  getTradingPlans(userId: string): Promise<TradingPlan[]>;
+  getActiveTradingPlans(userId: string): Promise<TradingPlan[]>;
+  getTradingPlan(userId: string, planId: string): Promise<TradingPlan | null>;
+  createTradingPlan(userId: string, plan: Omit<TradingPlan, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<TradingPlan>;
+  updateTradingPlan(userId: string, planId: string, updates: Partial<TradingPlanFormData>): Promise<TradingPlan>;
+  deleteTradingPlan(userId: string, planId: string): Promise<void>;
+}
+
+// Supabase trading plan service implementation
+class SupabaseTradingPlanService implements ITradingPlanService {
+  async getTradingPlans(userId: string): Promise<TradingPlan[]> {
+    if (!supabase) throw new Error('Supabase is not configured');
+
+    const { data, error } = await supabase
+      .from('trading_plans')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return data.map(this.mapSupabaseTradingPlanToTradingPlan);
+  }
+
+  async getActiveTradingPlans(userId: string): Promise<TradingPlan[]> {
+    if (!supabase) throw new Error('Supabase is not configured');
+
+    const { data, error } = await supabase
+      .from('trading_plans')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return data.map(this.mapSupabaseTradingPlanToTradingPlan);
+  }
+
+  async getTradingPlan(userId: string, planId: string): Promise<TradingPlan | null> {
+    if (!supabase) throw new Error('Supabase is not configured');
+
+    const { data, error } = await supabase
+      .from('trading_plans')
+      .select('*')
+      .eq('id', planId)
+      .eq('user_id', userId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null; // Not found
+      throw error;
+    }
+
+    return this.mapSupabaseTradingPlanToTradingPlan(data);
+  }
+
+  async createTradingPlan(
+    userId: string,
+    planData: Omit<TradingPlan, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+  ): Promise<TradingPlan> {
+    if (!supabase) throw new Error('Supabase is not configured');
+
+    const planToInsert = {
+      user_id: userId,
+      name: planData.name,
+      description: planData.description,
+      instruments: planData.instruments,
+      trading_sessions: planData.tradingSessions,
+      entry_rules: planData.entryRules,
+      exit_rules: planData.exitRules,
+      risk_management: planData.riskManagement,
+      psychology_rules: planData.psychologyRules,
+      status: planData.status,
+    };
+
+    const { data, error } = await supabase
+      .from('trading_plans')
+      .insert([planToInsert])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return this.mapSupabaseTradingPlanToTradingPlan(data);
+  }
+
+  async updateTradingPlan(
+    userId: string,
+    planId: string,
+    updates: Partial<TradingPlanFormData>
+  ): Promise<TradingPlan> {
+    if (!supabase) throw new Error('Supabase is not configured');
+
+    const updateData: any = {};
+    if ('name' in updates && updates.name !== undefined) updateData.name = updates.name;
+    if ('description' in updates && updates.description !== undefined) updateData.description = updates.description;
+    if ('instruments' in updates) updateData.instruments = updates.instruments;
+    if ('tradingSessions' in updates) updateData.trading_sessions = updates.tradingSessions;
+    if ('entryRules' in updates) updateData.entry_rules = updates.entryRules;
+    if ('exitRules' in updates) updateData.exit_rules = updates.exitRules;
+    if ('riskManagement' in updates) updateData.risk_management = updates.riskManagement;
+    if ('psychologyRules' in updates) updateData.psychology_rules = updates.psychologyRules;
+
+    const { data, error } = await supabase
+      .from('trading_plans')
+      .update(updateData)
+      .eq('id', planId)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return this.mapSupabaseTradingPlanToTradingPlan(data);
+  }
+
+  async deleteTradingPlan(userId: string, planId: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase is not configured');
+
+    const { error } = await supabase
+      .from('trading_plans')
+      .delete()
+      .eq('id', planId)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+  }
+
+  private mapSupabaseTradingPlanToTradingPlan(supabasePlan: any): TradingPlan {
+    // Handle instruments - could be null, undefined, or an array
+    let instruments: string[] = [];
+    if (supabasePlan.instruments) {
+      if (Array.isArray(supabasePlan.instruments)) {
+        instruments = supabasePlan.instruments.filter((i: string | null) => i != null);
+      } else if (typeof supabasePlan.instruments === 'string') {
+        try {
+          const parsed = JSON.parse(supabasePlan.instruments);
+          instruments = Array.isArray(parsed) ? parsed.filter((i: string | null) => i != null) : [];
+        } catch {
+          instruments = [];
+        }
+      }
+    }
+
+    return {
+      id: supabasePlan.id,
+      userId: supabasePlan.user_id,
+      name: supabasePlan.name,
+      description: supabasePlan.description || '',
+      instruments: instruments,
+      tradingSessions: supabasePlan.trading_sessions || '',
+      entryRules: supabasePlan.entry_rules || '',
+      exitRules: supabasePlan.exit_rules || '',
+      riskManagement: supabasePlan.risk_management || '',
+      psychologyRules: supabasePlan.psychology_rules || '',
+      status: supabasePlan.status as TradingPlanStatus,
+      createdAt: supabasePlan.created_at,
+      updatedAt: supabasePlan.updated_at,
+    };
+  }
+}
+
+// Local storage trading plan service implementation
+class LocalTradingPlanService implements ITradingPlanService {
+  private getStoredTradingPlans(): TradingPlan[] {
+    if (typeof window === 'undefined') return [];
+    const stored = localStorage.getItem(STORAGE_KEYS.TRADING_PLANS);
+    return stored ? JSON.parse(stored) : [];
+  }
+
+  private saveTradingPlans(plans: TradingPlan[]): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_KEYS.TRADING_PLANS, JSON.stringify(plans));
+  }
+
+  async getTradingPlans(userId: string): Promise<TradingPlan[]> {
+    const plans = this.getStoredTradingPlans();
+    return plans.filter((p) => p.userId === userId);
+  }
+
+  async getActiveTradingPlans(userId: string): Promise<TradingPlan[]> {
+    const plans = await this.getTradingPlans(userId);
+    return plans.filter((p) => p.status === 'active');
+  }
+
+  async getTradingPlan(userId: string, planId: string): Promise<TradingPlan | null> {
+    const plans = await this.getTradingPlans(userId);
+    return plans.find((p) => p.id === planId) || null;
+  }
+
+  async createTradingPlan(
+    userId: string,
+    planData: Omit<TradingPlan, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+  ): Promise<TradingPlan> {
+    const plans = this.getStoredTradingPlans();
+    const newPlan: TradingPlan = {
+      ...planData,
+      id: generateId(),
+      userId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    plans.push(newPlan);
+    this.saveTradingPlans(plans);
+    return newPlan;
+  }
+
+  async updateTradingPlan(
+    userId: string,
+    planId: string,
+    updates: Partial<TradingPlanFormData>
+  ): Promise<TradingPlan> {
+    const plans = this.getStoredTradingPlans();
+    const index = plans.findIndex((p) => p.id === planId && p.userId === userId);
+    if (index === -1) throw new Error('Trading plan not found');
+
+    plans[index] = {
+      ...plans[index],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    this.saveTradingPlans(plans);
+    return plans[index];
+  }
+
+  async deleteTradingPlan(userId: string, planId: string): Promise<void> {
+    const plans = this.getStoredTradingPlans();
+    const filtered = plans.filter((p) => !(p.id === planId && p.userId === userId));
+    this.saveTradingPlans(filtered);
+  }
+}
+
+// Fallback trading plan service
+class FallbackTradingPlanService implements ITradingPlanService {
+  private supabaseService = new SupabaseTradingPlanService();
+  private localService = new LocalTradingPlanService();
+
+  private async tryWithFallback<T>(supabaseFn: () => Promise<T>, localFn: () => Promise<T>): Promise<T> {
+    if (!isSupabaseConfigured) {
+      return localFn();
+    }
+    try {
+      return await supabaseFn();
+    } catch (err) {
+      console.warn('Supabase trading plan operation failed, falling back to localStorage:', err);
+      return localFn();
+    }
+  }
+
+  async getTradingPlans(userId: string): Promise<TradingPlan[]> {
+    return this.tryWithFallback(
+      () => this.supabaseService.getTradingPlans(userId),
+      () => this.localService.getTradingPlans(userId)
+    );
+  }
+
+  async getActiveTradingPlans(userId: string): Promise<TradingPlan[]> {
+    return this.tryWithFallback(
+      () => this.supabaseService.getActiveTradingPlans(userId),
+      () => this.localService.getActiveTradingPlans(userId)
+    );
+  }
+
+  async getTradingPlan(userId: string, planId: string): Promise<TradingPlan | null> {
+    return this.tryWithFallback(
+      () => this.supabaseService.getTradingPlan(userId, planId),
+      () => this.localService.getTradingPlan(userId, planId)
+    );
+  }
+
+  async createTradingPlan(
+    userId: string,
+    planData: Omit<TradingPlan, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+  ): Promise<TradingPlan> {
+    return this.tryWithFallback(
+      () => this.supabaseService.createTradingPlan(userId, planData),
+      () => this.localService.createTradingPlan(userId, planData)
+    );
+  }
+
+  async updateTradingPlan(
+    userId: string,
+    planId: string,
+    updates: Partial<TradingPlanFormData>
+  ): Promise<TradingPlan> {
+    return this.tryWithFallback(
+      () => this.supabaseService.updateTradingPlan(userId, planId, updates),
+      () => this.localService.updateTradingPlan(userId, planId, updates)
+    );
+  }
+
+  async deleteTradingPlan(userId: string, planId: string): Promise<void> {
+    return this.tryWithFallback(
+      () => this.supabaseService.deleteTradingPlan(userId, planId),
+      () => this.localService.deleteTradingPlan(userId, planId)
+    );
+  }
+}
+
+// Export trading plan service singleton
+export const tradingPlanService: ITradingPlanService = new FallbackTradingPlanService();
