@@ -99,11 +99,11 @@ export default function TradeDetailsModal({ isOpen, onClose, trade, onTradeMutat
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg bg-card border-border">
+      <DialogContent className="sm:max-w-lg bg-card border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <DialogTitle className="text-foreground text-xl uppercase">{trade.symbol}</DialogTitle>
+              <DialogTitle className="text-foreground text-xl md:text-2xl font-bold uppercase">{trade.symbol}</DialogTitle>
               <Badge 
                 variant="secondary" 
                 className={`text-sm px-3 py-1 ${
@@ -136,9 +136,10 @@ export default function TradeDetailsModal({ isOpen, onClose, trade, onTradeMutat
             )}
           </DialogDescription>
         </DialogHeader>
+        <div className="space-y-6 mt-4 max-h-[50vh] overflow-y-auto">
           {/* Trade Timing (if available) */}
           {(trade.openDateTime || trade.closeDateTime) && (
-            <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl p-5 border border-border/50">
+            <div className="bg-linear-to-br from-muted/30 to-muted/10 rounded-xl p-5 border border-border/50">
               <div className="text-sm text-muted-foreground mb-4 flex items-center gap-2 font-medium">
                 <Clock className="w-4 h-4" />
                 Trade Timing
@@ -211,73 +212,74 @@ export default function TradeDetailsModal({ isOpen, onClose, trade, onTradeMutat
             </div>
           )}
 
-        <div className="space-y-6 mt-4">
-          {/* PnL Display */}
-          <div className={`rounded-xl p-4 ${
-            isProfitable 
-              ? 'bg-emerald-500/10 border border-emerald-500/20' 
-              : isLoss 
-                ? 'bg-rose-500/10 border border-rose-500/20'
-                : 'bg-muted/20 border border-border'
-          }`}>
-            <div className="flex items-center gap-1 text-sm text-muted-foreground font-semibold mb-1">
-              <Award className="size-3" />
-              <span>{trade.result === 'profit' ? 'Profit' : 'Loss'}</span>
+          <div className="space-y-6 mt-4">
+            {/* PnL Display */}
+            <div className={`rounded-xl p-4 ${
+              isProfitable 
+                ? 'bg-emerald-500/10 border border-emerald-500/20' 
+                : isLoss 
+                  ? 'bg-rose-500/10 border border-rose-500/20'
+                  : 'bg-muted/20 border border-border'
+            }`}>
+              <div className="flex items-center gap-1 text-sm text-muted-foreground font-semibold mb-1">
+                <Award className="size-3" />
+                <span>{trade.result === 'profit' ? 'Profit' : 'Loss'}</span>
+              </div>
+              <div className={`text-3xl font-bold ${getPnLColor(trade.pnl)}`}>
+                {formatPnL(trade.pnl)}
+              </div>
             </div>
-            <div className={`text-3xl font-bold ${getPnLColor(trade.pnl)}`}>
-              {formatPnL(trade.pnl)}
+
+            {/* Trade Details Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-muted/20 rounded-lg p-4">
+                <div className="text-sm text-muted-foreground mb-1">Entry Price</div>
+                <div className="text-lg font-semibold text-foreground">
+                  {formatPrice(trade.entryPrice)}
+                </div>
+              </div>
+              <div className="bg-muted/20 rounded-lg p-4">
+                <div className="text-sm text-muted-foreground mb-1">Exit Price</div>
+                <div className="text-lg font-semibold text-foreground">
+                  {formatPrice(trade.exitPrice)}
+                </div>
+              </div>
             </div>
+
+            {/* Tags */}
+            {trade.tags && trade.tags.length > 0 && (
+              <div>
+                <div className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
+                  <Tag className="w-4 h-4" />
+                  Tags
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {trade.tags.map((tag, idx) => (
+                    <Badge
+                      key={idx}
+                      variant="outline"
+                      className="border-border text-muted-foreground"
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Notes */}
+            {trade.notes && (
+              <div>
+                <div className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Notes
+                </div>
+                <div className="rounded-lg p-4 text-foreground whitespace-pre-wrap bg-blue-500/10 border border-dashed border-blue-500/20">
+                  {trade.notes}
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* Trade Details Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-muted/20 rounded-lg p-4">
-              <div className="text-sm text-muted-foreground mb-1">Entry Price</div>
-              <div className="text-lg font-semibold text-foreground">
-                {formatPrice(trade.entryPrice)}
-              </div>
-            </div>
-            <div className="bg-muted/20 rounded-lg p-4">
-              <div className="text-sm text-muted-foreground mb-1">Exit Price</div>
-              <div className="text-lg font-semibold text-foreground">
-                {formatPrice(trade.exitPrice)}
-              </div>
-            </div>
-          </div>
-
-          {/* Tags */}
-          {trade.tags && trade.tags.length > 0 && (
-            <div>
-              <div className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
-                <Tag className="w-4 h-4" />
-                Tags
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {trade.tags.map((tag, idx) => (
-                  <Badge
-                    key={idx}
-                    variant="outline"
-                    className="border-border text-muted-foreground"
-                  >
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Notes */}
-          {trade.notes && (
-            <div>
-              <div className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                Notes
-              </div>
-              <div className="bg-muted/20 rounded-lg p-4 text-foreground whitespace-pre-wrap">
-                {trade.notes}
-              </div>
-            </div>
-          )}
         </div>
 
             <div className="w-full flex justify-center items-center gap-1 border-t py-5">

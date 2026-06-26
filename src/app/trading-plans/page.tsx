@@ -209,13 +209,12 @@ export default function TradingPlansPage() {
     <div className="min-h-screen bg-background">
       <DashboardHeader />
       
-      <header className="py-4 mt-10 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-30">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <header className="py-4 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-30">
+        <div className="container mx-auto px-4 py-4 flex flex-col justify-between gap-4">
             <Button
               variant="ghost"
               onClick={() => router.push('/dashboard')}
-              className="text-muted-foreground hover:text-foreground"
+              className="w-fit text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
@@ -226,7 +225,6 @@ export default function TradingPlansPage() {
                 Create and manage your trading strategy templates
               </p>
             </div>
-          </div>
         </div>
       </header>
 
