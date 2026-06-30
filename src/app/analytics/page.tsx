@@ -13,6 +13,7 @@ import DashboardHeader from '../sections/DashboardHeader';
 import Footer from '../sections/Footer';
 import CurrencyPieChart from '@/components/charts/CurrencyPieChart';
 import PnLPieChart from '@/components/charts/PnLPieChart';
+import TopBottomCurrenciesChart from '@/components/charts/TopBottomCurrenciesChart';
 
 export default function AnalyticsPage() {
   const router = useRouter();
@@ -237,7 +238,7 @@ export default function AnalyticsPage() {
       name: item.symbol,
       value: item.totalPnl,
       count: item.count,
-    })).sort((a, b) => Math.abs(b.value) - Math.abs(a.value)).slice(0, 10); // Top 10 currencies by magnitude
+    })).sort((a, b) => b.value - a.value).slice(0, 10); // Top 10 currencies by magnitude
   }, [data.symbolPerformance]);
 
       // Calculate PnL distribution data for pie chart
@@ -685,6 +686,20 @@ export default function AnalyticsPage() {
             data={pnlChartData}
             title="Profit & Loss Distribution"
             description="Breakdown of profits and losses"
+          />
+        </div>
+
+        {/* Top & Bottom Performing Currencies */}
+        <div className="mb-8">
+          <TopBottomCurrenciesChart 
+            data={data.symbolPerformance.map(item => ({
+              name: item.symbol,
+              value: item.totalPnl,
+              count: item.count,
+              winRate: item.winRate,
+            }))}
+            title="Best & Worst Performing Currencies"
+            description="Toggle between top 10 best and worst performing currency pairs"
           />
         </div>
 
