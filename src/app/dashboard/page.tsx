@@ -736,13 +736,13 @@ export default function DashboardPage() {
                               
                               {/* Weekly PnL Column */}
                               <div
-                                className={`min-h-20 p-1 md:p-2 flex flex-col items-center justify-center border border-border rounded-lg 
+                                className={`min-h-20 p-1 md:p-2 wrap-break-word border border-border rounded-lg 
                                   ${hasTradesThisWeek ? `${getPnLBgColor(weekPnL)} ${getPnLBorderColor(weekPnL)}` : 'bg-muted/10'}
                                 `}
                               >
                                 {hasTradesThisWeek ? (
                                   <div className="text-center space-y-1">
-                                    <div className={`text-sm font-extrabold ${getPnLColor(weekPnL)}`}>
+                                    <div className={`text-sm font-extrabold line-clamp-1 ${getPnLColor(weekPnL)}`}>
                                       {formatPnL(weekPnL)}
                                     </div>
                                     <div className="text-[10px] text-muted-foreground">
@@ -829,7 +829,7 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-card border-border sticky top-[28rem]">
+              <Card className="bg-card border-border sticky top-112">
                 <CardHeader>
                   <CardTitle className="text-foreground">Quick Actions</CardTitle>
                   <CardDescription className="text-muted-foreground">

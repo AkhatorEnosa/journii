@@ -3,8 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 import { tradingPlanService } from '@/lib/store';
 import { TradingPlan, TradingPlanFormData } from '@/lib/types';
 import TradingPlanModal from '@/components/trading-plans/TradingPlanModal';
@@ -38,11 +36,11 @@ const DEFAULT_TRADING_PLAN_TEMPLATE: Omit<TradingPlan, 'id' | 'userId' | 'create
   • Take profit level must be at a clear technical level
 
 ✓ CHECKLIST (ALL must be true):
-  □ Trend direction confirmed on higher timeframe
-  □ Price at key support/resistance level
-  □ Price action signal present
-  □ Risk-reward ratio meets minimum 1:2
-  □ No major news events in next 2 hours`,
+  • Trend direction confirmed on higher timeframe
+  • Price at key support/resistance level
+  • Price action signal present
+  • Risk-reward ratio meets minimum 1:2
+  • No major news events in next 2 hours`,
   exitRules: `✓ TAKE PROFIT STRATEGY:
   • Take 50% profit at first target (1:2 risk-reward)
   • Move stop loss to breakeven after first target hit
@@ -206,52 +204,45 @@ export default function TradingPlansPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardHeader />
-      
-      <header className="py-4 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-30">
-        <div className="container mx-auto px-4 py-4 flex flex-col justify-between gap-4">
-            <Button
-              variant="ghost"
-              onClick={() => router.push('/dashboard')}
-              className="w-fit text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Trading Plans</h1>
-              <p className="text-sm text-muted-foreground">
-                Create and manage your trading strategy templates
-              </p>
-            </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background flex flex-col justify-between">
+      <div>
+        <DashboardHeader />
+        
+        <header className="py-4 border-b border-border bg-card/80 backdrop-blur-sm z-30">
+          <div className="container mx-auto px-4 py-4 flex flex-col justify-between gap-4">
+              <div>
+                <h1 className="text-xl font-bold text-foreground">Trading Plans</h1>
+                <p className="text-sm text-muted-foreground">
+                  Create and manage your trading strategy templates
+                </p>
+              </div>
+          </div>
+        </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <TradingPlanList
-          plans={plans}
-          isLoading={isLoading}
-          onCreateNew={handleCreateNew}
-          onUseTemplate={handleUseTemplate}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+        <main className="container mx-auto px-4 py-8">
+          <TradingPlanList
+            plans={plans}
+            isLoading={isLoading}
+            onCreateNew={handleCreateNew}
+            onUseTemplate={handleUseTemplate}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        </main>
+
+        <TradingPlanModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingPlan(null);
+            setTemplateData(null);
+          }}
+          onSubmit={handleSubmit}
+          plan={editingPlan}
+          templateData={templateData}
+          isLoading={isSaving}
         />
-      </main>
-
-      <TradingPlanModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingPlan(null);
-          setTemplateData(null);
-        }}
-        onSubmit={handleSubmit}
-        plan={editingPlan}
-        templateData={templateData}
-        isLoading={isSaving}
-      />
-
+      </div>
       <Footer />
     </div>
   );

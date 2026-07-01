@@ -172,7 +172,7 @@ export default function TradingPlanModal({
                 placeholder="e.g., My Swing Trading Strategy"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                className="bg-input border-border text-foreground"
+                className="bg-input border-border text-foreground font-semibold capitalize"
                 disabled={isLoading}
               />
               {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
@@ -264,7 +264,7 @@ export default function TradingPlanModal({
                 placeholder="• Specific conditions that must be met before entering a trade&#10;• Technical indicators or patterns to look for&#10;• Timeframe requirements..."
                 value={formData.entryRules}
                 onChange={(e) => handleInputChange('entryRules', e.target.value)}
-                className="bg-input border-border text-foreground font-mono text-sm"
+                className="bg-input border-border text-foreground text-sm"
                 disabled={isLoading}
                 rows={4}
               />
@@ -280,7 +280,7 @@ export default function TradingPlanModal({
                 placeholder="• Take profit conditions&#10;• Stop loss placement rules&#10;• Trailing stop guidelines..."
                 value={formData.exitRules}
                 onChange={(e) => handleInputChange('exitRules', e.target.value)}
-                className="bg-input border-border text-foreground font-mono text-sm"
+                className="bg-input border-border text-foreground text-sm"
                 disabled={isLoading}
                 rows={4}
               />
@@ -296,7 +296,7 @@ export default function TradingPlanModal({
                 placeholder="• Maximum risk per trade (e.g., 1-2% of account)&#10;• Position sizing methodology&#10;• Maximum number of open trades..."
                 value={formData.riskManagement}
                 onChange={(e) => handleInputChange('riskManagement', e.target.value)}
-                className="bg-input border-border text-foreground font-mono text-sm"
+                className="bg-input border-border text-foreground text-sm"
                 disabled={isLoading}
                 rows={4}
               />
@@ -317,7 +317,7 @@ export default function TradingPlanModal({
                 placeholder="• Mental state requirements before trading&#10;• Rules to prevent emotional trading&#10;• What to do after a loss/win..."
                 value={formData.psychologyRules}
                 onChange={(e) => handleInputChange('psychologyRules', e.target.value)}
-                className="bg-input border-border text-foreground font-mono text-sm"
+                className="bg-input border-border text-foreground text-sm"
                 disabled={isLoading}
                 rows={4}
               />

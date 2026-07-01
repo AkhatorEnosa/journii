@@ -12,12 +12,15 @@ import {
   FileText,
   Clock,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Eye
 } from 'lucide-react';
 import { TradingPlan } from '@/lib/types';
+import TradingPlanDetailsModal from './TradingPlanDetailsModal';
 
 interface TradingPlanListProps {
   plans: TradingPlan[];
+  onView?: (plan: TradingPlan) => void;
   onEdit: (plan: TradingPlan) => void;
   onDelete: (plan: TradingPlan) => void;
   onCreateNew: () => void;
@@ -27,6 +30,7 @@ interface TradingPlanListProps {
 
 export default function TradingPlanList({ 
   plans, 
+  onView,
   onEdit, 
   onDelete, 
   onCreateNew,
@@ -34,12 +38,24 @@ export default function TradingPlanList({
   isLoading = false 
 }: TradingPlanListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [viewingPlan, setViewingPlan] = useState<TradingPlan | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   const handleDelete = (plan: TradingPlan) => {
     if (window.confirm(`Are you sure you want to delete "${plan.name}"? This action cannot be undone.`)) {
       setDeletingId(plan.id);
       onDelete(plan);
     }
+  };
+
+  const handleView = (plan: TradingPlan) => {
+    setViewingPlan(plan);
+    setIsViewModalOpen(true);
+  };
+
+  const handleViewClose = () => {
+    setIsViewModalOpen(false);
+    setViewingPlan(null);
   };
 
   const formatDate = (dateStr: string) => {
@@ -85,7 +101,7 @@ export default function TradingPlanList({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between sticky top-0 z-50 bg-background py-4">
         <div>
           <h3 className="text-lg font-semibold text-foreground">Your Trading Plans</h3>
           <p className="text-sm text-muted-foreground">
@@ -105,13 +121,13 @@ export default function TradingPlanList({
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-3">
         {plans.map((plan) => (
           <Card key={plan.id} className="bg-card border-border hover:border-primary/50 transition-colors">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <CardTitle className="text-foreground text-lg">{plan.name}</CardTitle>
+                  <CardTitle className="text-foreground text-lg capitalize">{plan.name}</CardTitle>
                   <CardDescription className="text-muted-foreground text-sm mt-1">
                     {plan.description || 'No description'}
                   </CardDescription>
@@ -185,6 +201,16 @@ export default function TradingPlanList({
                   <Button
                     variant="ghost"
                     size="sm"
+                    onClick={() => handleView(plan)}
+                    className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                    disabled={isLoading}
+                  >
+                    <Eye className="w-3 h-3 mr-1" />
+                    View
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => onEdit(plan)}
                     className="h-8 px-2 text-muted-foreground hover:text-foreground"
                     disabled={isLoading}
@@ -208,6 +234,13 @@ export default function TradingPlanList({
           </Card>
         ))}
       </div>
+
+      {/* View Plan Modal */}
+      <TradingPlanDetailsModal
+        isOpen={isViewModalOpen}
+        onClose={handleViewClose}
+        plan={viewingPlan}
+      />
     </div>
   );
 }
