@@ -4,11 +4,21 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Target, 
-  Edit, 
-  Trash2, 
-  Plus, 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Target,
+  Edit,
+  Trash2,
+  Plus,
   FileText,
   Clock,
   TrendingUp,
@@ -26,25 +36,49 @@ interface TradingPlanListProps {
   onCreateNew: () => void;
   onUseTemplate?: () => void;
   isLoading?: boolean;
+  onDeleted?: () => void;
 }
 
-export default function TradingPlanList({ 
-  plans, 
+export default function TradingPlanList({
+  plans,
   onView,
-  onEdit, 
-  onDelete, 
+  onEdit,
+  onDelete,
   onCreateNew,
   onUseTemplate,
-  isLoading = false 
+  onDeleted,
+  isLoading = false
 }: TradingPlanListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [viewingPlan, setViewingPlan] = useState<TradingPlan | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [planToDelete, setPlanToDelete] = useState<TradingPlan | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleDelete = (plan: TradingPlan) => {
-    if (window.confirm(`Are you sure you want to delete "${plan.name}"? This action cannot be undone.`)) {
-      setDeletingId(plan.id);
-      onDelete(plan);
+  const handleDeleteClick = (plan: TradingPlan) => {
+    setPlanToDelete(plan);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setPlanToDelete(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!planToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      setDeletingId(planToDelete.id);
+      await onDelete(planToDelete);
+      onDeleted?.();
+    } finally {
+      setIsDeleting(false);
+      setDeletingId(null);
+      setDeleteDialogOpen(false);
+      setPlanToDelete(null);
     }
   };
 
@@ -221,9 +255,9 @@ export default function TradingPlanList({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleDelete(plan)}
+                    onClick={() => handleDeleteClick(plan)}
                     className="h-8 px-2 text-muted-foreground hover:text-rose-500"
-                    disabled={isLoading || deletingId === plan.id}
+                    disabled={isLoading}
                   >
                     <Trash2 className="w-3 h-3 mr-1" />
                     Delete
@@ -241,6 +275,30 @@ export default function TradingPlanList({
         onClose={handleViewClose}
         plan={viewingPlan}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={handleDeleteCancel}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-foreground">Delete Trading Plan</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              Are you sure you want to delete "{planToDelete?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="text-muted-foreground hover:text-foreground" onClick={handleDeleteCancel}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-rose-500 hover:bg-rose-600"
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
