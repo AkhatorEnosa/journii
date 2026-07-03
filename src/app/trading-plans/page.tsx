@@ -9,6 +9,8 @@ import TradingPlanModal from '@/components/trading-plans/TradingPlanModal';
 import TradingPlanList from '@/components/trading-plans/TradingPlanList';
 import DashboardHeader from '../sections/DashboardHeader';
 import Footer from '../sections/Footer';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 // Default trading plan template
 const DEFAULT_TRADING_PLAN_TEMPLATE: Omit<TradingPlan, 'id' | 'userId' | 'createdAt' | 'updatedAt'> = {
@@ -208,8 +210,11 @@ export default function TradingPlansPage() {
       <div>
         <DashboardHeader />
         
-        <header className="py-4 border-b border-border bg-card/80 backdrop-blur-sm z-30">
-          <div className="container mx-auto px-4 py-4 flex flex-col justify-between gap-4">
+        {/* <header className="py-4 border-b border-border bg-card/80 backdrop-blur-sm z-30">
+          <div className="container mx-auto px-4 py-4 flex gap-4 group">
+              <Button variant="ghost" onClick={() => router.back()} className="text-muted-foreground hover:text-foreground scale-0 group-hover:scale-100 group-hover:flex">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
               <div>
                 <h1 className="text-xl font-bold text-foreground">Trading Plans</h1>
                 <p className="text-sm text-muted-foreground">
@@ -217,7 +222,7 @@ export default function TradingPlansPage() {
                 </p>
               </div>
           </div>
-        </header>
+        </header> */}
 
         <main className="container mx-auto px-4 py-8">
           <TradingPlanList

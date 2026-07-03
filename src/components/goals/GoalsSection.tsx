@@ -184,8 +184,8 @@ export default function GoalsSection() {
     <div className="space-y-6">
       {/* Header */}
       <div className="md:py-8 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50 container mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center justify-between group">
-        <div className='group flex gap-4'>
-            <Button variant="ghost" onClick={() => router.push('/dashboard')} className="text-muted-foreground hover:text-foreground scale-0 group-hover:scale-100 group-hover:flex">
+         <div className='group flex flex-col md:flex-row gap-4'>
+            <Button variant="ghost" onClick={() => router.back()} className="w-fit text-muted-foreground hover:text-foreground md:opacity-50 group-hover:opacity-100 group-hover:flex">
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div>

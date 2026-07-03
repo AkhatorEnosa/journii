@@ -409,14 +409,14 @@ export default function DashboardPage() {
             </div>
       }
       <header className="py-4 mt-10 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-30">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center justify-between gap-2">
+          {/* <div className="flex items-center gap-4"> */}
             <div>
               <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
               <p className="text-sm text-muted-foreground">Welcome back, {user.fullName || user.emailAddresses[0]?.emailAddress}</p>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
+          {/* </div> */}
+          <div className="flex flex-col md:flex-row items-center gap-2">
             <Button
               variant="outline"
               onClick={() => router.push('/trading-plans')}
@@ -426,89 +426,91 @@ export default function DashboardPage() {
               Trading Plans
             </Button>
 
-            {/* Export Menu */}
-            <div className="relative">
-              <Button
-                variant="outline"
-                onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
-                className="border-border text-foreground hover:bg-accent"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export
-              </Button>
-              
-              {isExportMenuOpen && (
-                <>
-                  {/* Backdrop to close menu */}
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setIsExportMenuOpen(false)}
-                  />
-                  
-                  {/* Dropdown menu */}
-                  <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-lg shadow-lg z-50">
-                    <div className="p-2">
-                      <div className="text-xs font-semibold text-muted-foreground px-3 py-2">
-                        Export Trade Data
+            <div className='flex gap-2'>
+              {/* Export Menu */}
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+                  className="border-border text-foreground hover:bg-accent"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
+                
+                {isExportMenuOpen && (
+                  <>
+                    {/* Backdrop to close menu */}
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setIsExportMenuOpen(false)}
+                    />
+                    
+                    {/* Dropdown menu */}
+                    <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-lg shadow-lg z-50">
+                      <div className="p-2">
+                        <div className="text-xs font-semibold text-muted-foreground px-3 py-2">
+                          Export Trade Data
+                        </div>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start text-foreground hover:bg-accent"
+                          onClick={() => {
+                            const allTrades = dailyTotals.flatMap(d => d.trades);
+                            if (allTrades.length > 0) {
+                              exportTradesToCSV(allTrades);
+                            }
+                            setIsExportMenuOpen(false);
+                          }}
+                        >
+                          <FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-500" />
+                          Export as CSV
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start text-foreground hover:bg-accent"
+                          onClick={() => {
+                            const allTrades = dailyTotals.flatMap(d => d.trades);
+                            if (allTrades.length > 0) {
+                              exportTradesToPDF(allTrades, stats, timeFilter);
+                            }
+                            setIsExportMenuOpen(false);
+                          }}
+                        >
+                          <FileText className="w-4 h-4 mr-2 text-rose-500" />
+                          Export as PDF
+                        </Button>
+                        
+                        <div className="border-t border-border my-2" />
+                        
+                        <div className="text-xs font-semibold text-muted-foreground px-3 py-2">
+                          Export Analytics Summary
+                        </div>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start text-foreground hover:bg-accent"
+                          onClick={() => {
+                            exportAnalyticsSummaryToPDF(stats, timeFilter);
+                            setIsExportMenuOpen(false);
+                          }}
+                        >
+                          <FileText className="w-4 h-4 mr-2 text-blue-500" />
+                          Summary Report (PDF)
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start text-foreground hover:bg-accent"
-                        onClick={() => {
-                          const allTrades = dailyTotals.flatMap(d => d.trades);
-                          if (allTrades.length > 0) {
-                            exportTradesToCSV(allTrades);
-                          }
-                          setIsExportMenuOpen(false);
-                        }}
-                      >
-                        <FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-500" />
-                        Export as CSV
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start text-foreground hover:bg-accent"
-                        onClick={() => {
-                          const allTrades = dailyTotals.flatMap(d => d.trades);
-                          if (allTrades.length > 0) {
-                            exportTradesToPDF(allTrades, stats, timeFilter);
-                          }
-                          setIsExportMenuOpen(false);
-                        }}
-                      >
-                        <FileText className="w-4 h-4 mr-2 text-rose-500" />
-                        Export as PDF
-                      </Button>
-                      
-                      <div className="border-t border-border my-2" />
-                      
-                      <div className="text-xs font-semibold text-muted-foreground px-3 py-2">
-                        Export Analytics Summary
-                      </div>
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start text-foreground hover:bg-accent"
-                        onClick={() => {
-                          exportAnalyticsSummaryToPDF(stats, timeFilter);
-                          setIsExportMenuOpen(false);
-                        }}
-                      >
-                        <FileText className="w-4 h-4 mr-2 text-blue-500" />
-                        Summary Report (PDF)
-                      </Button>
                     </div>
-                  </div>
-                </>
-              )}
-            </div>
+                  </>
+                )}
+              </div>
 
-            <Button
-              onClick={() => setIsModalOpen(true)}
-              className="bg-primary hover:bg-primary/90"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Trade
-            </Button>
+              <Button
+                onClick={() => setIsModalOpen(true)}
+                className="bg-primary hover:bg-primary/90"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Trade
+              </Button>
+            </div>
           </div>
         </div>
       </header>

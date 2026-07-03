@@ -23,10 +23,12 @@ import {
   Clock,
   TrendingUp,
   AlertCircle,
-  Eye
+  Eye,
+  ArrowLeft
 } from 'lucide-react';
 import { TradingPlan } from '@/lib/types';
 import TradingPlanDetailsModal from './TradingPlanDetailsModal';
+import { useRouter } from 'next/navigation';
 
 interface TradingPlanListProps {
   plans: TradingPlan[];
@@ -55,6 +57,8 @@ export default function TradingPlanList({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [planToDelete, setPlanToDelete] = useState<TradingPlan | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const router = useRouter();
 
   const handleDeleteClick = (plan: TradingPlan) => {
     setPlanToDelete(plan);
@@ -135,12 +139,17 @@ export default function TradingPlanList({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between sticky top-0 z-50 bg-background py-4">
-        <div>
-          <h3 className="text-lg font-semibold text-foreground">Your Trading Plans</h3>
-          <p className="text-sm text-muted-foreground">
-            {plans.length} plan{plans.length !== 1 ? 's' : ''} ({plans.filter(p => p.status === 'active').length} active)
-          </p>
+      <div className="group flex flex-col md:flex-row md:items-center justify-between sticky top-0 z-50 bg-background py-4 gap-2 md:gap-0">
+        <div className='flex flex-col md:flex-row md:items-center gap-4'>
+          <Button variant="ghost" onClick={() => router.back()} className="w-fit text-muted-foreground hover:text-foreground md:opacity-50 group-hover:opacity-100 group-hover:flex">
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">Your Trading Plans</h3>
+            <p className="text-sm text-muted-foreground">
+              {plans.length} plan{plans.length !== 1 ? 's' : ''} ({plans.filter(p => p.status === 'active').length} active)
+            </p>
+          </div>
         </div>
         <div className="flex gap-2">
           {onUseTemplate && (
