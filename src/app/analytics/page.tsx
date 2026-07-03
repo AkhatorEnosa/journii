@@ -349,16 +349,13 @@ export default function AnalyticsPage() {
         </div>
       }
       <DashboardHeader />
-      <div className='container mx-auto px-4'>
-        <Button variant="ghost" onClick={() => router.push('/dashboard')} className="py-8 lg:mt-10 text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
-      </div>
       {/* Header */}
-      <header className="md:py-4 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-30">
-        <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center justify-between">
+      <header className="md:py-4 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center justify-between group">
           <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={() => router.push('/dashboard')} className="text-muted-foreground hover:text-foreground scale-0 group-hover:scale-100 group-hover:flex">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
             <div>
               <h1 className="text-xl font-bold text-foreground">Analytics</h1>
               <p className="text-sm text-muted-foreground">Track your trading performance</p>

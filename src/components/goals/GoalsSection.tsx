@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
-import { Target, Plus, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Target, Plus, Clock, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
 import { goalService } from '@/lib/store';
 import { tradeService } from '@/lib/store';
 import { Goal, GoalProgress, Trade } from '@/lib/types';
@@ -183,15 +183,19 @@ export default function GoalsSection() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Target className="w-6 h-6" />
-            Goals & Challenges
-          </h2>
-          <p className="text-muted-foreground mt-1">
-            Set targets and track your trading progress
-          </p>
+      <div className="md:py-8 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50 container mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center justify-between group">
+        <div className='group flex gap-4'>
+            <Button variant="ghost" onClick={() => router.push('/dashboard')} className="text-muted-foreground hover:text-foreground scale-0 group-hover:scale-100 group-hover:flex">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div>
+              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                Goals & Challenges
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Set targets and track your trading progress
+              </p>
+            </div>
         </div>
         <Button onClick={() => setIsModalOpen(true)} className="gap-2 mt-5 md:mt-0 w-fit">
           <Plus className="w-4 h-4" />
@@ -199,127 +203,129 @@ export default function GoalsSection() {
         </Button>
       </div>
 
-      {/* Stats Summary - Clickable Filters */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <StatCard label="Active" count={activeGoals.length} color="text-blue-500" filter="active" />
-        <StatCard label="Completed" count={completedGoals.length} color="text-emerald-500" filter="completed" />
-        <StatCard label="Not Achieved" count={failedGoals.length} color="text-rose-500" filter="failed" />
-      </div>
+      <div className='container mx-auto px-4 py-8 max-w-6xl'>
+        {/* Stats Summary - Clickable Filters */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <StatCard label="Active" count={activeGoals.length} color="text-blue-500" filter="active" />
+          <StatCard label="Completed" count={completedGoals.length} color="text-emerald-500" filter="completed" />
+          <StatCard label="Not Achieved" count={failedGoals.length} color="text-rose-500" filter="failed" />
+        </div>
 
-      {/* Filtered Goals List */}
-      <div className="space-y-6">
-        {filteredGoals.length > 0 ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-foreground capitalize">
-                {activeFilter === 'all' ? 'All Goals' : `${activeFilter} Goals`}
-              </h3>
-              {activeFilter !== 'all' && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setActiveFilter('all')}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  Show All
-                </Button>
-              )}
+        {/* Filtered Goals List */}
+        <div className="space-y-6">
+          {filteredGoals.length > 0 ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-foreground capitalize">
+                  {activeFilter === 'all' ? 'All Goals' : `${activeFilter} Goals`}
+                </h3>
+                {activeFilter !== 'all' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setActiveFilter('all')}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    Show All
+                  </Button>
+                )}
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                {filteredGoals.map((progress) => (
+                  <GoalCard
+                    key={progress.goal.id}
+                    progress={progress}
+                    showActions={true}
+                    onEdit={() => {
+                      setEditingGoal(progress.goal);
+                      setIsModalOpen(true);
+                    }}
+                    onViewTrades={() => {
+                      setViewTradesGoal(progress.goal);
+                      setIsTradesModalOpen(true);
+                    }}
+                    onDelete={() => {
+                      setDeleteGoalId(progress.goal.id);
+                      setIsDeleteDialogOpen(true);
+                    }}
+                  />
+                ))}
+              </div>
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              {filteredGoals.map((progress) => (
-                <GoalCard
-                  key={progress.goal.id}
-                  progress={progress}
-                  showActions={true}
-                  onEdit={() => {
-                    setEditingGoal(progress.goal);
-                    setIsModalOpen(true);
-                  }}
-                  onViewTrades={() => {
-                    setViewTradesGoal(progress.goal);
-                    setIsTradesModalOpen(true);
-                  }}
-                  onDelete={() => {
-                    setDeleteGoalId(progress.goal.id);
-                    setIsDeleteDialogOpen(true);
-                  }}
-                />
-              ))}
+          ) : goalProgresses.length === 0 && !isLoading ? (
+            <div className="text-center py-12 bg-muted/20 rounded-lg border border-border">
+              <Target className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">No Goals Yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Set a trading goal to challenge yourself and track your progress
+              </p>
+              <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Create Your First Goal
+              </Button>
             </div>
-          </div>
-        ) : goalProgresses.length === 0 && !isLoading ? (
-          <div className="text-center py-12 bg-muted/20 rounded-lg border border-border">
-            <Target className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">No Goals Yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Set a trading goal to challenge yourself and track your progress
-            </p>
-            <Button onClick={() => setIsModalOpen(true)} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Create Your First Goal
-            </Button>
-          </div>
-        ) : filteredGoals.length === 0 && !isLoading ? (
-          <div className="text-center py-8 bg-muted/20 rounded-lg border border-border">
-            {activeFilter === 'active' && <Clock className="w-10 h-10 mx-auto mb-3 text-muted-foreground/60" />}
-            {activeFilter === 'completed' && <CheckCircle className="w-10 h-10 mx-auto mb-3 text-muted-foreground/60" />}
-            {activeFilter === 'failed' && <XCircle className="w-10 h-10 mx-auto mb-3 text-muted-foreground/60" />}
-            <p className="text-muted-foreground">No {activeFilter} goals</p>
-          </div>
-        ) : null}
+          ) : filteredGoals.length === 0 && !isLoading ? (
+            <div className="text-center py-8 bg-muted/20 rounded-lg border border-border">
+              {activeFilter === 'active' && <Clock className="w-10 h-10 mx-auto mb-3 text-muted-foreground/60" />}
+              {activeFilter === 'completed' && <CheckCircle className="w-10 h-10 mx-auto mb-3 text-muted-foreground/60" />}
+              {activeFilter === 'failed' && <XCircle className="w-10 h-10 mx-auto mb-3 text-muted-foreground/60" />}
+              <p className="text-muted-foreground">No {activeFilter} goals</p>
+            </div>
+          ) : null}
 
-        {isLoading && goals.length === 0 && (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        )}
+          {isLoading && goals.length === 0 && (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          )}
+        </div>
+
+        {/* Create/Edit Goal Modal */}
+        <GoalModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingGoal(null);
+          }}
+          onSubmit={handleCreateGoal}
+          isLoading={isLoading}
+          goal={editingGoal || undefined}
+        />
+
+        {/* View Trades Modal */}
+        <GoalTradesModal
+          isOpen={isTradesModalOpen}
+          onClose={() => {
+            setIsTradesModalOpen(false);
+            setViewTradesGoal(null);
+          }}
+          goal={viewTradesGoal}
+          trades={trades}
+        />
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent className="bg-card border-border">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-foreground">Delete Goal</AlertDialogTitle>
+              <AlertDialogDescription className="text-muted-foreground">
+                Are you sure you want to delete this goal? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="text-muted-foreground hover:text-foreground">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-rose-500 hover:bg-rose-600"
+                onClick={handleDeleteGoal}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-
-      {/* Create/Edit Goal Modal */}
-      <GoalModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingGoal(null);
-        }}
-        onSubmit={handleCreateGoal}
-        isLoading={isLoading}
-        goal={editingGoal || undefined}
-      />
-
-      {/* View Trades Modal */}
-      <GoalTradesModal
-        isOpen={isTradesModalOpen}
-        onClose={() => {
-          setIsTradesModalOpen(false);
-          setViewTradesGoal(null);
-        }}
-        goal={viewTradesGoal}
-        trades={trades}
-      />
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent className="bg-card border-border">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-foreground">Delete Goal</AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground">
-              Are you sure you want to delete this goal? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="text-muted-foreground hover:text-foreground">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-rose-500 hover:bg-rose-600"
-              onClick={handleDeleteGoal}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

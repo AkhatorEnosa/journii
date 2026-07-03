@@ -32,15 +32,14 @@ export default function GoalsPage() {
   return (
     <>
         <DashboardHeader />
-        <div className='container mx-auto px-4'>
-            <Button variant="ghost" onClick={() => router.push('/dashboard')} className="py-8 md:mt-10 text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Dashboard
+        {/* <div className='container mx-auto px-4 group'>
+            <Button variant="ghost" onClick={() => router.push('/dashboard')} className="text-muted-foreground hover:text-foreground scale-0 group-hover:scale-100 group-hover:flex">
+              <ArrowLeft className="w-4 h-4" />
             </Button>
-        </div>
-        <div className="container mx-auto px-4 py-8 max-w-6xl">
+        </div> */}
+        {/* <div className="container mx-auto px-4 py-8 max-w-6xl"> */}
             <GoalsSection />
-        </div>
+        {/* </div> */}
         <Footer />
     </>
   );
