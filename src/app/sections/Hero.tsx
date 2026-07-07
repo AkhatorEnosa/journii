@@ -7,6 +7,7 @@ import Link from "next/link";
 import Header from "./Header";
 import { ScaleIn } from "@/components/animations/ScaleIn";
 import { FadeInUp } from "@/components/animations/FadeInUp";
+import { useScrollTilt } from "@/lib/hooks/useScrollTilt";
 
 export const Hero = () => {
 
@@ -58,25 +59,7 @@ export const Hero = () => {
               </Link>
             </div>
 
-            <div className="relative mx-auto my-20 p-6 w-full max-w-6xl">
-              <div className="absolute inset-0 rounded shadow-lg bg-orange-400 blur-[10rem] opacity-10" />
-
-              {/* Hero Image - Trading Dashboard Preview */}
-              <ScaleIn className="mb-6 sticky top-0 z-10">
-                <img
-                  src="https://ik.imagekit.io/btlflc5goc/tradrjourney/tradrjourney.png"
-                  alt="Trading Dashboard Preview"
-                  className="relative w-full h-auto shadow-lg rounded-lg"
-                />
-              </ScaleIn>
-              <ScaleIn>
-                <img
-                  src="https://ik.imagekit.io/btlflc5goc/tradrjourney/Screenshot%202026-04-27%20at%2011.01.48.png?updatedAt=1777284332643"
-                  alt="Trading Dashboard Preview"
-                  className="relative w-full h-auto shadow-lg rounded-lg"
-                />
-              </ScaleIn>
-            </div>
+            <ScrollTiltImages />
           </div>
         </FadeInUp>
       </div>
@@ -84,6 +67,51 @@ export const Hero = () => {
   );
 };
 
+// Scroll-tilted images component
+function ScrollTiltImages() {
+  const { ref, rotation } = useScrollTilt({ maxRotation: 5, threshold: 0.15 });
+
+  return (
+    <div ref={ref} className="relative mx-auto my-20 w-full max-w-6xl px-6">
+      <div className="absolute inset-0 rounded-full bg-orange-400 blur-[10rem] opacity-10" />
+
+      {/* Hero Images - Scroll-tilted Overlapping Cards Layout */}
+      <div className="relative">
+        {/* Back Image Layer */}
+        <ScaleIn>
+          <div 
+            className="relative -mt-16 ml-auto w-[85%] max-w-4xl transform transition-transform duration-100 ease-out"
+            style={{ 
+              transform: `rotate(${rotation}deg)`,
+            }}
+          >
+            <img
+              src="https://ik.imagekit.io/btlflc5goc/tradrjourney/Screenshot%202026-04-27%20at%2011.01.48.png?updatedAt=1777284332643"
+              alt="Analytics Dashboard Preview"
+              className="w-full h-auto rounded-xl border border-border/20 shadow-2xl"
+            />
+          </div>
+        </ScaleIn>
+
+        {/* Front Image Layer */}
+        <ScaleIn className="relative z-10 -mt-8">
+          <div 
+            className="relative mx-auto w-full max-w-5xl transform rounded-xl border border-border/20 bg-background/50 backdrop-blur-sm shadow-2xl transition-transform duration-100 ease-out"
+            style={{ 
+              transform: `rotate(${rotation * 0.7}deg)`,
+            }}
+          >
+            <img
+              src="https://ik.imagekit.io/btlflc5goc/tradrjourney/tradrjourney.png"
+              alt="Trading Dashboard Preview"
+              className="w-full h-auto rounded-xl"
+            />
+          </div>
+        </ScaleIn>
+      </div>
+    </div>
+  );
+}
 function NavItem({
   label,
   hasDropdown,
