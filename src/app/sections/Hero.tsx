@@ -59,12 +59,19 @@ export const Hero = () => {
             </div>
 
             <div className="relative mx-auto my-20 p-6 w-full max-w-6xl">
-              <div className="absolute inset-0 rounded shadow-lg bg-emerald-400 blur-[10rem] opacity-10" />
+              <div className="absolute inset-0 rounded shadow-lg bg-orange-400 blur-[10rem] opacity-10" />
 
               {/* Hero Image - Trading Dashboard Preview */}
-              <ScaleIn>
+              <ScaleIn className="mb-6 sticky top-0 z-10">
                 <img
                   src="https://ik.imagekit.io/btlflc5goc/tradrjourney/tradrjourney.png"
+                  alt="Trading Dashboard Preview"
+                  className="relative w-full h-auto shadow-lg rounded-lg"
+                />
+              </ScaleIn>
+              <ScaleIn>
+                <img
+                  src="https://ik.imagekit.io/btlflc5goc/tradrjourney/Screenshot%202026-04-27%20at%2011.01.48.png?updatedAt=1777284332643"
                   alt="Trading Dashboard Preview"
                   className="relative w-full h-auto shadow-lg rounded-lg"
                 />

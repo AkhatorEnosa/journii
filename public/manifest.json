@@ -1,7 +1,7 @@
 {
   "name": "TradrJourney - Professional Trading Journal",
   "short_name": "TradrJourney",
-  "description": "Track, analyze, and improve your trading performance with TradrJourney - the professional trading journal trusted by 10K+ traders worldwide.",
+  "description": "Track, analyze, and improve your trading performance with TradrJourney - the professional trading journal trusted by traders worldwide.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#09090b",
