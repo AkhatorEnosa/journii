@@ -21,6 +21,7 @@ interface ITradeService {
   updateTrade(userId: string, tradeId: string, updates: Partial<TradeFormData>): Promise<Trade>;
   deleteTrade(userId: string, tradeId: string): Promise<void>;
   getDailyTotals(userId: string, year: number, month: number): Promise<DailyTotal[]>;
+  checkForDuplicate(userId: string, tradeData: TradeFormData): Promise<Trade | null>;
 }
 
 // Supabase implementation
@@ -151,6 +152,30 @@ class SupabaseTradeService implements ITradeService {
       .eq('user_id', userId);
 
     if (error) throw error;
+  }
+
+  async checkForDuplicate(userId: string, tradeData: TradeFormData): Promise<Trade | null> {
+    if (!supabase) throw new Error('Supabase is not configured');
+
+    // Check for trades with same symbol, entry price, exit price, date, and direction
+    const { data, error } = await supabase
+      .from('trades')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('symbol', tradeData.symbol.toLowerCase())
+      .eq('entry_price', tradeData.entryPrice)
+      .eq('exit_price', tradeData.exitPrice)
+      .eq('date', tradeData.date)
+      .eq('direction', tradeData.direction)
+      .single();
+
+    if (error) {
+      // If it's a "not found" error, return null (no duplicate)
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+
+    return this.mapSupabaseTradeToTrade(data);
   }
 
   async getDailyTotals(userId: string, year: number, month: number): Promise<DailyTotal[]> {
@@ -331,6 +356,21 @@ class LocalTradeService implements ITradeService {
     const trades = this.getStoredTrades();
     const filtered = trades.filter((t) => !(t.id === tradeId && t.userId === userId));
     this.saveTrades(filtered);
+  }
+
+  async checkForDuplicate(userId: string, tradeData: TradeFormData): Promise<Trade | null> {
+    const trades = await this.getTrades(userId);
+    
+    // Find a trade with same symbol, entry price, exit price, date, and direction
+    const duplicate = trades.find(t => 
+      t.symbol.toLowerCase() === tradeData.symbol.toLowerCase() &&
+      t.entryPrice === tradeData.entryPrice &&
+      t.exitPrice === tradeData.exitPrice &&
+      t.date === tradeData.date &&
+      t.direction === tradeData.direction
+    );
+    
+    return duplicate || null;
   }
 
   async getDailyTotals(userId: string, year: number, month: number): Promise<DailyTotal[]> {

@@ -23,7 +23,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Edit, Trash2, AlertCircle, Tag } from 'lucide-react';
 import TradeModal from './TradeModal';
 import TradeDetailsModal from './TradeDetailsModal';
+import DuplicateWarningDialog from './DuplicateWarningDialog';
 import { tradeKeys } from '@/lib/hooks/useTrades';
+import { Trade, TradeFormData } from '@/lib/types';
 
 interface TradeListProps {
   selectedDate?: string;
@@ -43,6 +45,9 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [deleteTradeId, setDeleteTradeId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [pendingTradeData, setPendingTradeData] = useState<TradeFormData | null>(null);
+  const [duplicateTrade, setDuplicateTrade] = useState<Trade | null>(null);
+  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
   const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -126,6 +131,18 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
     if (!user) return;
 
     try {
+      // Check for duplicates first
+      const duplicate = await tradeService.checkForDuplicate(user.id, newTrade);
+      
+      if (duplicate) {
+        // Store the pending trade data and show duplicate warning
+        setPendingTradeData(newTrade);
+        setDuplicateTrade(duplicate);
+        setIsDuplicateDialogOpen(true);
+        return;
+      }
+
+      // No duplicate found, proceed with creation
       await tradeService.createTrade(user.id, newTrade);
       // Invalidate queries to refetch data
       queryClient.invalidateQueries({ queryKey: tradeKeys.all });
@@ -136,6 +153,23 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
     } catch (err) {
       console.error('Failed to create trade:', err);
     }
+  };
+
+  const handleDuplicateEditTrade = () => {
+    // Close duplicate dialog
+    setIsDuplicateDialogOpen(false);
+    setPendingTradeData(null);
+    
+    // Open edit modal with the duplicate trade
+    setEditingTrade(duplicateTrade);
+    setIsEditModalOpen(true);
+    setDuplicateTrade(null);
+  };
+
+  const handleDuplicateCancel = () => {
+    setIsDuplicateDialogOpen(false);
+    setPendingTradeData(null);
+    setDuplicateTrade(null);
   };
 
   const handleViewTrade = (trade: any) => {
@@ -413,6 +447,14 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Duplicate Warning Dialog */}
+      <DuplicateWarningDialog
+        isOpen={isDuplicateDialogOpen}
+        duplicateTrade={duplicateTrade}
+        onEditTrade={handleDuplicateEditTrade}
+        onCancel={handleDuplicateCancel}
+      />
     </div>
   );
 }
