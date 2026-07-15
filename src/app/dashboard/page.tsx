@@ -15,15 +15,18 @@ import { exportTradesToCSV, exportTradesToPDF, exportAnalyticsSummaryToPDF } fro
 import TradeModal from '@/components/trades/TradeModal';
 import TradeList from '@/components/trades/TradeList';
 import TradingPlanModal from '@/components/trading-plans/TradingPlanModal';
-import TradingPlanList from '@/components/trading-plans/TradingPlanList';
+// import TradingPlanList from '@/components/trading-plans/TradingPlanList';
 import DashboardHeader from '../sections/DashboardHeader';
 import Footer from '../sections/Footer';
+import { CurrencyFilter } from '@/components/ui/CurrencyFilter';
+import { useCurrencyFilter } from '@/lib/currency-filter';
 
 type TimeFilter = 'all' | 'year' | 'month' | 'week';
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isLoaded, isSignedIn } = useUser();
+  const { updateAvailableCurrencies, filterTradesByCurrency, availableCurrencies, selectedCurrencies } = useCurrencyFilter();
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTradeListOpen, setIsTradeListOpen] = useState(false);
@@ -109,12 +112,12 @@ export default function DashboardPage() {
     return { startDate, endDate, displayMonth };
   };
 
-  // Load trades based on time filter
+  // Load trades based on time filter and currency filter
   useEffect(() => {
     if (isLoaded && isSignedIn && user) {
       loadTradesForTimeFilter();
     }
-  }, [user, isLoaded, isSignedIn, timeFilter]);
+  }, [user, isLoaded, isSignedIn, timeFilter, selectedCurrencies]);
 
   const loadTradesForTimeFilter = async () => {
     if (!user) return;
@@ -136,9 +139,15 @@ export default function DashboardPage() {
       
       // console.log('[Dashboard] Trades loaded:', trades);
       
+      // Update available currencies for the filter
+      updateAvailableCurrencies(trades);
+      
+      // Apply currency filter
+      const filteredTrades = filterTradesByCurrency(trades);
+      
       // Convert trades to daily totals for calendar display
       const dailyMap = new Map<string, Trade[]>();
-      trades.forEach((trade) => {
+      filteredTrades.forEach((trade) => {
         const normalizedDate = trade.date;
         if (!dailyMap.has(normalizedDate)) {
           dailyMap.set(normalizedDate, []);
@@ -401,15 +410,15 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <DashboardHeader />
       {isLoadingTotals &&
             <div className="fixed top-0 left-0 flex w-screen h-screen bg-background/50 backdrop-blur-sm justify-center items-center py-8 z-100">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
       }
-      <header className="py-4 mt-10 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-30">
-        <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center justify-between gap-2">
+      {/* Header */}
+      <DashboardHeader />
+      <header className="py-4 border-b border-border bg-card/80 backdrop-blur-sm md:sticky top-0 z-30">
+        <div className="container mx-auto px-4 md:py-4 flex flex-col md:flex-row md:items-center justify-between gap-2">
           {/* <div className="flex items-center gap-4"> */}
             <div>
               <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
@@ -417,14 +426,25 @@ export default function DashboardPage() {
             </div>
           {/* </div> */}
           <div className="flex flex-col md:flex-row items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => router.push('/trading-plans')}
-              className="border-border text-foreground hover:bg-accent"
-            >
-              <ClipboardList className="w-4 h-4 mr-2" />
-              Trading Plans
-            </Button>
+            <div className='flex gap-2'>
+              <Button
+                variant="outline"
+                onClick={() => router.push('/trading-plans')}
+                className="border-border text-foreground hover:bg-accent"
+              >
+                <ClipboardList className="w-4 h-4 mr-2" />
+                Trading Plans
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => router.push('/dashboard/ai-insights')}
+                className="w-fit border border-[#d4af37] text-[#d4af37] bg-[#d4af37]/10 hover:bg-[#d4af37] hover:text-white dark:border-[#d4af37] dark:text-[#d4af37] dark:bg-[#d4af37]/10 dark:hover:bg-[#d4af37] dark:hover:text-background"
+              >
+                <Brain className="w-4 h-4 mr-2" />
+                AI Insights
+              </Button>
+            </div>
 
             <div className='flex gap-2'>
               {/* Export Menu */}
@@ -531,14 +551,6 @@ export default function DashboardPage() {
         <div className="w-full mb-6">
           <div className="w-full flex items-center justify-normal overflow-scroll md:justify-end gap-2">
             <span className="text-sm text-muted-foreground mr-2 font-semibold">Period:</span>
-            <Button
-              variant="outline"
-              onClick={() => router.push('/dashboard/ai-insights')}
-              className="w-fit border border-[#d4af37] text-[#d4af37] bg-[#d4af37]/10 hover:bg-[#d4af37] hover:text-white dark:border-[#d4af37] dark:text-[#d4af37] dark:bg-[#d4af37]/10 dark:hover:bg-[#d4af37] dark:hover:text-background"
-            >
-              <Brain className="w-4 h-4 mr-2" />
-              AI Insights
-            </Button>
             {(['all', 'year', 'month', 'week'] as TimeFilter[]).map((filter) => (
               <Button
                 key={filter}
@@ -554,6 +566,7 @@ export default function DashboardPage() {
                 {filter === 'all' ? 'All Time' : filter.charAt(0).toUpperCase() + filter.slice(1)}
               </Button>
             ))}
+            <CurrencyFilter availableCurrencies={availableCurrencies} />
           </div>
         </div>
 

@@ -12,6 +12,7 @@ import GoalModal from './GoalModal';
 import GoalCard from './GoalCard';
 import GoalTradesModal from './GoalTradesModal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useCurrencyFilter } from '@/lib/currency-filter';
 
 type GoalFilter = 'all' | 'active' | 'completed' | 'failed';
 
@@ -29,6 +30,7 @@ export default function GoalsSection() {
   const [activeFilter, setActiveFilter] = useState<GoalFilter>('all');
   const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
+  const { filterTradesByCurrency } = useCurrencyFilter();
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -67,9 +69,12 @@ export default function GoalsSection() {
       setGoals(goalsData);
       setTrades(tradesData);
 
+      // Apply currency filter to trades for goal progress calculation
+      const filteredTrades = filterTradesByCurrency(tradesData);
+
       // Calculate progress for each goal
       const progresses: GoalProgress[] = goalsData.map(goal =>
-        goalService.getGoalProgress(user.id, goal, tradesData)
+        goalService.getGoalProgress(user.id, goal, filteredTrades)
       );
       // console.log('Calculated progress for goals:', progresses.length);
       setGoalProgresses(progresses);
