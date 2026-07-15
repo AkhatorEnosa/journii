@@ -30,6 +30,7 @@ import { motion } from 'motion/react';
 import { FadeInUp } from '@/components/animations/FadeInUp';
 import type { AIAnalysisResponse, TradeMetrics } from '@/lib/ai-analysis';
 import Footer from '@/app/sections/Footer';
+import { CurrencyFilter } from '../ui/CurrencyFilter';
 
 interface AIInsightsDashboardProps {
   analysis: AIAnalysisResponse | null;
@@ -37,6 +38,7 @@ interface AIInsightsDashboardProps {
   isLoading: boolean;
   onRefresh: () => void;
   lastUpdated?: string;
+  availableCurrencies: string[];
 }
 
 export function AIInsightsDashboard({
@@ -45,6 +47,7 @@ export function AIInsightsDashboard({
   isLoading,
   onRefresh,
   lastUpdated,
+  availableCurrencies
 }: AIInsightsDashboardProps) {
   const router = useRouter();
   const { user, isLoaded } = useUser();
@@ -164,7 +167,10 @@ export function AIInsightsDashboard({
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-4 pt-2">
+                  <div className="flex flex-col md:flex-row items-center gap-4 pt-2">
+                    <div className="flex justify-center items-center text-sm gap-2">
+                      <CurrencyFilter availableCurrencies={availableCurrencies} />
+                    </div>
                     <Button onClick={onRefresh} variant="outline" size="sm" className="gap-2">
                       <RefreshCw className="h-4 w-4" />
                       Refresh Analysis

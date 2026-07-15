@@ -26,6 +26,7 @@ import TradeDetailsModal from './TradeDetailsModal';
 import DuplicateWarningDialog from './DuplicateWarningDialog';
 import { tradeKeys } from '@/lib/hooks/useTrades';
 import { Trade, TradeFormData } from '@/lib/types';
+import { useCurrencyFilter } from '@/lib/currency-filter';
 
 interface TradeListProps {
   selectedDate?: string;
@@ -51,6 +52,7 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
   const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { selectedCurrencies, filterTradesByCurrency } = useCurrencyFilter();
 
   const isControlled = controlledOpen !== undefined;
   const isOpen = isControlled ? controlledOpen : internalOpen;
@@ -70,7 +72,7 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
     if (isLoaded && isSignedIn) {
       loadTrades();
     }
-  }, [selectedDate, router, isLoaded, isSignedIn, isOpen]);
+  }, [selectedDate, router, isLoaded, isSignedIn, isOpen, selectedCurrencies]);
 
   const loadTrades = async () => {
     if (!user) return;
@@ -81,7 +83,9 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
         ? await tradeService.getTradesByDate(user.id, selectedDate)
         : await tradeService.getTrades(user.id);
       
-      setTrades(tradesData);
+      // Apply currency filter
+      const filteredTrades = filterTradesByCurrency(tradesData);
+      setTrades(filteredTrades);
     } catch (err) {
       console.error('Failed to load trades:', err);
     } finally {
