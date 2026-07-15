@@ -547,9 +547,9 @@ export default function DashboardPage() {
           </Card>
         )}
 
-        {/* AI button & Time Filter */}
-        <div className="w-full mb-6">
-          <div className="w-full flex items-center justify-normal overflow-scroll md:justify-end gap-2">
+        {/* Currencies & Time Filter */}
+        <div className="w-full mb-6 flex flex-col gap-1">
+          <div className="w-full flex items-center justify-normal pb-2 md:pb-0 overflow-scroll md:justify-end gap-2">
             <span className="text-sm text-muted-foreground mr-2 font-semibold">Period:</span>
             {(['all', 'year', 'month', 'week'] as TimeFilter[]).map((filter) => (
               <Button
@@ -566,7 +566,9 @@ export default function DashboardPage() {
                 {filter === 'all' ? 'All Time' : filter.charAt(0).toUpperCase() + filter.slice(1)}
               </Button>
             ))}
-            <CurrencyFilter availableCurrencies={availableCurrencies} />
+          </div>
+          <div className='w-full flex items-center justify-normal overflow-scroll md:justify-end gap-2'>
+            <span className="text-sm text-muted-foreground mr-2 font-semibold">Currencies:</span><CurrencyFilter availableCurrencies={availableCurrencies} />
           </div>
         </div>
 

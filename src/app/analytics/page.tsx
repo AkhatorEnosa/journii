@@ -370,40 +370,46 @@ export default function AnalyticsPage() {
               <p className="text-sm text-muted-foreground">Track your trading performance</p>
             </div>
           </div>
-          <div className="py-4 md:py-0 md:w-fit flex items-center justify-normal overflow-scroll md:justify-end gap-2 mt-4 md:mt-0">
-            <Button
-              variant={timeframe === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setTimeframe('all')}
-              className={timeframe === 'all' ? 'bg-primary hover:bg-primary/90' : 'border-border text-foreground hover:bg-accent'}
-            >
-              All Time
-            </Button>
-            <Button
-              variant={timeframe === '7d' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setTimeframe('7d')}
-              className={timeframe === '7d' ? 'bg-primary hover:bg-primary/90' : 'border-border text-foreground hover:bg-accent'}
-            >
-              7 Days
-            </Button>
-            <Button
-              variant={timeframe === '30d' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setTimeframe('30d')}
-              className={timeframe === '30d' ? 'bg-primary hover:bg-primary/90' : 'border-border text-foreground hover:bg-accent'}
-            >
-              30 Days
-            </Button>
-            <Button
-              variant={timeframe === '90d' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setTimeframe('90d')}
-              className={timeframe === '90d' ? 'bg-primary hover:bg-primary/90' : 'border-border text-foreground hover:bg-accent'}
-            >
-              90 Days
-            </Button>
-            <CurrencyFilter availableCurrencies={availableCurrencies} />
+
+          <div className="w-full md:w-fit mb-6 flex flex-col mt-5 gap-1">
+            <div className="w-full flex items-center justify-normal pb-2 md:pb-0 overflow-scroll md:justify-end gap-2">
+              <span className="text-sm text-muted-foreground mr-2 font-semibold">Period:</span>
+              <Button
+                variant={timeframe === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTimeframe('all')}
+                className={timeframe === 'all' ? 'bg-primary hover:bg-primary/90' : 'border-border text-foreground hover:bg-accent'}
+              >
+                All Time
+              </Button>
+              <Button
+                variant={timeframe === '7d' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTimeframe('7d')}
+                className={timeframe === '7d' ? 'bg-primary hover:bg-primary/90' : 'border-border text-foreground hover:bg-accent'}
+              >
+                7 Days
+              </Button>
+              <Button
+                variant={timeframe === '30d' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTimeframe('30d')}
+                className={timeframe === '30d' ? 'bg-primary hover:bg-primary/90' : 'border-border text-foreground hover:bg-accent'}
+              >
+                30 Days
+              </Button>
+              <Button
+                variant={timeframe === '90d' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTimeframe('90d')}
+                className={timeframe === '90d' ? 'bg-primary hover:bg-primary/90' : 'border-border text-foreground hover:bg-accent'}
+              >
+                90 Days
+              </Button>
+            </div>
+            <div className='w-full flex items-center justify-normal overflow-scroll md:justify-end gap-2'>
+              <span className="text-sm text-muted-foreground mr-2 font-semibold">Currencies:</span><CurrencyFilter availableCurrencies={availableCurrencies} />
+            </div>
           </div>
         </div>
       </header>

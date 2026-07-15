@@ -60,8 +60,7 @@ export function CurrencyFilter({ availableCurrencies, className }: CurrencyFilte
             className
           )}
         >
-          <span className="text-sm font-medium">Currency:</span>
-          <span className="text-sm font-semibold capitalize">{getFilterLabel()}</span>
+          <span className="text-sm font-semibold uppercase">{getFilterLabel()}</span>
           <ChevronDown className="h-4 w-4" />
         </div>
       </DropdownMenuTrigger>
