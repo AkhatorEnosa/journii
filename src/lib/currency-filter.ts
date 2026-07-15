@@ -92,11 +92,12 @@ export function useCurrencyFilter() {
     return `${globalSelectedCurrencies?.length || 0} Selected`;
   }, [isAllSelected]);
 
-  // Filter trades by selected currencies
+  // Filter trades by selected currencies - check current value directly
   const filterTradesByCurrency = useCallback(<T extends { symbol: string }>(trades: T[]): T[] => {
-    if (isAllSelected) return trades;
-    return trades.filter(trade => globalSelectedCurrencies?.includes(trade.symbol));
-  }, [isAllSelected]);
+    const currentSelected = globalSelectedCurrencies;
+    if (currentSelected === null || currentSelected.length === 0) return trades;
+    return trades.filter(trade => currentSelected.includes(trade.symbol));
+  }, []);
 
   return {
     selectedCurrencies: globalSelectedCurrencies,

@@ -105,9 +105,6 @@ export default function AIInsightsPage() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-background via-background to-muted/20">
-      <div className="container mx-auto px-4 py-4 flex justify-end">
-        <CurrencyFilter availableCurrencies={availableCurrencies} />
-      </div>
       {error ? (
         <div className="container mx-auto py-16 px-4">
           <motion.div
@@ -146,6 +143,7 @@ export default function AIInsightsPage() {
           isLoading={isLoading}
           onRefresh={fetchAnalysis}
           lastUpdated={lastUpdated}
+          availableCurrencies={availableCurrencies}
         />
       )}
     </div>
