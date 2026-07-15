@@ -22,58 +22,85 @@ function saveCurrencyFilter(currencies: string[] | null): void {
   }
 }
 
+// Module-level state for currency filter (shared across all components)
+let globalSelectedCurrencies: string[] | null = getStoredCurrencyFilter();
+let globalAvailableCurrencies: string[] = [];
+let listeners: Array<() => void> = [];
+
+// Subscribe to changes
+function subscribe(listener: () => void) {
+  listeners.push(listener);
+  return () => {
+    listeners = listeners.filter(l => l !== listener);
+  };
+}
+
+// Notify all listeners of changes
+function notifyListeners() {
+  listeners.forEach(listener => listener());
+}
+
 // Hook for managing currency filter state
 export function useCurrencyFilter() {
-  const [selectedCurrencies, setSelectedCurrencies] = useState<string[] | null>(null);
-  const [availableCurrencies, setAvailableCurrencies] = useState<string[]>([]);
+  const [, forceUpdate] = useState(0);
 
   // Load stored filter on mount
   useEffect(() => {
     const stored = getStoredCurrencyFilter();
-    setSelectedCurrencies(stored);
+    if (stored !== globalSelectedCurrencies) {
+      globalSelectedCurrencies = stored;
+      forceUpdate(n => n + 1);
+    }
+  }, []);
+
+  // Subscribe to changes
+  useEffect(() => {
+    return subscribe(() => forceUpdate(n => n + 1));
   }, []);
 
   // Update available currencies when trades are loaded
   const updateAvailableCurrencies = useCallback((trades: { symbol: string }[]) => {
     const currencies = [...new Set(trades.map(t => t.symbol).filter(Boolean))].sort();
-    setAvailableCurrencies(currencies);
+    globalAvailableCurrencies = currencies;
+    forceUpdate(n => n + 1);
   }, []);
 
   // Set selected currencies and persist
   const setCurrencyFilter = useCallback((currencies: string[] | null) => {
-    setSelectedCurrencies(currencies);
+    globalSelectedCurrencies = currencies;
     saveCurrencyFilter(currencies);
+    notifyListeners();
   }, []);
 
   // Check if a specific currency is selected
   const isCurrencySelected = useCallback((currency: string): boolean => {
-    if (selectedCurrencies === null) return true; // All currencies selected
-    return selectedCurrencies.includes(currency);
-  }, [selectedCurrencies]);
+    if (globalSelectedCurrencies === null) return true; // All currencies selected
+    return globalSelectedCurrencies.includes(currency);
+  }, []);
 
   // Check if "all currencies" mode is active
-  const isAllSelected = selectedCurrencies === null || selectedCurrencies.length === 0;
+  const isAllSelected = globalSelectedCurrencies === null || globalSelectedCurrencies.length === 0;
 
   // Get display label for the filter
   const getFilterLabel = useCallback((): string => {
     if (isAllSelected) {
       return 'All Currencies';
     }
-    if (selectedCurrencies && selectedCurrencies.length === 1) {
-      return selectedCurrencies[0];
+    if (globalSelectedCurrencies && globalSelectedCurrencies.length === 1) {
+      return globalSelectedCurrencies[0];
     }
-    return `${selectedCurrencies?.length || 0} Selected`;
-  }, [selectedCurrencies, isAllSelected]);
+    return `${globalSelectedCurrencies?.length || 0} Selected`;
+  }, [isAllSelected]);
 
   // Filter trades by selected currencies
   const filterTradesByCurrency = useCallback(<T extends { symbol: string }>(trades: T[]): T[] => {
     if (isAllSelected) return trades;
-    return trades.filter(trade => selectedCurrencies?.includes(trade.symbol));
-  }, [selectedCurrencies, isAllSelected]);
+    return trades.filter(trade => globalSelectedCurrencies?.includes(trade.symbol));
+  }, [isAllSelected]);
 
   return {
-    selectedCurrencies,
-    availableCurrencies,
+    selectedCurrencies: globalSelectedCurrencies,
+    availableCurrencies: globalAvailableCurrencies,
     isAllSelected,
     isCurrencySelected,
     getFilterLabel,
