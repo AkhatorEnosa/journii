@@ -14,10 +14,13 @@ import Footer from '../sections/Footer';
 import CurrencyPieChart from '@/components/charts/CurrencyPieChart';
 import PnLPieChart from '@/components/charts/PnLPieChart';
 import TopBottomCurrenciesChart from '@/components/charts/TopBottomCurrenciesChart';
+import { CurrencyFilter } from '@/components/ui/CurrencyFilter';
+import { useCurrencyFilter } from '@/lib/currency-filter';
 
 export default function AnalyticsPage() {
   const router = useRouter();
   const { user, isLoaded, isSignedIn } = useUser();
+  const { updateAvailableCurrencies, filterTradesByCurrency, availableCurrencies, selectedCurrencies } = useCurrencyFilter();
   const [isLoading, setIsLoading] = useState(false);
   const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d' | 'all'>('all');
   const [streakData, setStreakData] = useState({
@@ -48,7 +51,7 @@ export default function AnalyticsPage() {
     if (isLoaded && isSignedIn) {
       loadAnalyticsData();
     }
-  }, [router, timeframe, isLoaded, isSignedIn]);
+  }, [router, timeframe, isLoaded, isSignedIn, selectedCurrencies]);
 
   const loadAnalyticsData = async () => {
     if (!user) return;
@@ -56,6 +59,9 @@ export default function AnalyticsPage() {
     setIsLoading(true);
     try {
       const trades = await tradeService.getTrades(user.id);
+      
+      // Update available currencies for the filter
+      updateAvailableCurrencies(trades);
       
       // Filter trades by timeframe
       let filteredTradesData = trades;
@@ -65,6 +71,9 @@ export default function AnalyticsPage() {
         startDate.setDate(startDate.getDate() - days);
         filteredTradesData = trades.filter(t => new Date(t.date) >= startDate);
       }
+      
+      // Apply currency filter
+      filteredTradesData = filterTradesByCurrency(filteredTradesData);
 
       // Daily PnL
       const dailyPnLMap = new Map();
@@ -350,7 +359,7 @@ export default function AnalyticsPage() {
       }
       <DashboardHeader />
       {/* Header */}
-      <header className="md:py-4 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="md:py-4 border-b border-border bg-card/80 backdrop-blur-sm md:sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center justify-between group">
           <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4">
             <Button variant="ghost" onClick={() => router.back()} className="w-fit text-muted-foreground hover:text-foreground md:opacity-50 group-hover:opacity-100 group-hover:flex">
@@ -361,9 +370,10 @@ export default function AnalyticsPage() {
               <p className="text-sm text-muted-foreground">Track your trading performance</p>
             </div>
           </div>
-          <div className="flex gap-2 mt-4 md:mt-0">
+          <div className="py-4 md:py-0 md:w-fit flex items-center justify-normal overflow-scroll md:justify-end gap-2 mt-4 md:mt-0">
             <Button
               variant={timeframe === 'all' ? 'default' : 'outline'}
+              size="sm"
               onClick={() => setTimeframe('all')}
               className={timeframe === 'all' ? 'bg-primary hover:bg-primary/90' : 'border-border text-foreground hover:bg-accent'}
             >
@@ -371,6 +381,7 @@ export default function AnalyticsPage() {
             </Button>
             <Button
               variant={timeframe === '7d' ? 'default' : 'outline'}
+              size="sm"
               onClick={() => setTimeframe('7d')}
               className={timeframe === '7d' ? 'bg-primary hover:bg-primary/90' : 'border-border text-foreground hover:bg-accent'}
             >
@@ -378,6 +389,7 @@ export default function AnalyticsPage() {
             </Button>
             <Button
               variant={timeframe === '30d' ? 'default' : 'outline'}
+              size="sm"
               onClick={() => setTimeframe('30d')}
               className={timeframe === '30d' ? 'bg-primary hover:bg-primary/90' : 'border-border text-foreground hover:bg-accent'}
             >
@@ -385,11 +397,13 @@ export default function AnalyticsPage() {
             </Button>
             <Button
               variant={timeframe === '90d' ? 'default' : 'outline'}
+              size="sm"
               onClick={() => setTimeframe('90d')}
               className={timeframe === '90d' ? 'bg-primary hover:bg-primary/90' : 'border-border text-foreground hover:bg-accent'}
             >
               90 Days
             </Button>
+            <CurrencyFilter availableCurrencies={availableCurrencies} />
           </div>
         </div>
       </header>

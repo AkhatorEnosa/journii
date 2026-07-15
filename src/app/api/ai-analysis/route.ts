@@ -518,7 +518,7 @@ function generateEnhancedSimulatedAnalysis(
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await request.json();
+    const { userId, currencies } = await request.json();
 
     if (!userId) {
       return NextResponse.json(
@@ -527,8 +527,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check cache first
-    const cached = analysisCache.get(userId);
+    // Check cache first (use a cache key that includes currencies for proper caching)
+    const cacheKey = currencies && currencies.length > 0 ? `${userId}-${currencies.sort().join(',')}` : userId;
+    const cached = analysisCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION_MS) {
       return NextResponse.json({
         analysis: cached.analysis,
@@ -540,23 +541,29 @@ export async function POST(request: NextRequest) {
     // Fetch user's trades using server-side service
     const trades = await getTrades(userId);
 
-    if (trades.length === 0) {
+    // Apply currency filter if provided
+    let filteredTrades = trades;
+    if (currencies && currencies.length > 0) {
+      filteredTrades = trades.filter(trade => currencies.includes(trade.symbol));
+    }
+
+    if (filteredTrades.length === 0) {
       return NextResponse.json(
-        { error: 'No trades found for analysis. Start logging your trades first!' },
+        { error: 'No trades found for the selected currencies. Try selecting different currencies or "All Currencies".' },
         { status: 404 }
       );
     }
 
     // Stage 1: Data Enrichment
-    const context = generateAnalysisContext(trades);
-    const preparedTrades = prepareTradesForAI(trades);
+    const context = generateAnalysisContext(filteredTrades);
+    const preparedTrades = prepareTradesForAI(filteredTrades);
     const enrichedContext = enrichTradeData(preparedTrades, context);
 
     // Stage 2: Generate AI Analysis (or fallback to Stage 3)
     const analysis = await generateAIAnalysis(preparedTrades, enrichedContext);
 
     // Cache the result
-    analysisCache.set(userId, {
+    analysisCache.set(cacheKey, {
       analysis,
       metrics: enrichedContext.metrics,
       timestamp: Date.now(),

@@ -8,9 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Brain, AlertCircle, RefreshCw, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { AIAnalysisResponse, TradeMetrics } from '@/lib/ai-analysis';
+import { useCurrencyFilter } from '@/lib/currency-filter';
+import { CurrencyFilter } from '@/components/ui/CurrencyFilter';
+import { tradeService } from '@/lib/store';
 
 export default function AIInsightsPage() {
   const { user } = useUser();
+  const { selectedCurrencies, availableCurrencies, updateAvailableCurrencies } = useCurrencyFilter();
   const [analysis, setAnalysis] = useState<AIAnalysisResponse | null>(null);
   const [metrics, setMetrics] = useState<TradeMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +33,10 @@ export default function AIInsightsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId: user.id }),
+        body: JSON.stringify({ 
+          userId: user.id,
+          currencies: selectedCurrencies,
+        }),
       });
 
       if (!response.ok) {
@@ -46,14 +53,29 @@ export default function AIInsightsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, selectedCurrencies]);
 
-  // Auto-fetch analysis on mount if user is logged in
+  // Load available currencies on mount
+  useEffect(() => {
+    if (user?.id) {
+      const loadCurrencies = async () => {
+        try {
+          const trades = await tradeService.getTrades(user.id);
+          updateAvailableCurrencies(trades);
+        } catch (err) {
+          console.error('Failed to load currencies:', err);
+        }
+      };
+      loadCurrencies();
+    }
+  }, [user?.id, updateAvailableCurrencies]);
+
+  // Auto-fetch analysis on mount and when currency filter changes
   useEffect(() => {
     if (user?.id) {
       fetchAnalysis();
     }
-  }, [user?.id, fetchAnalysis]);
+  }, [user?.id, selectedCurrencies, fetchAnalysis]);
 
   if (!user) {
     return (
@@ -83,6 +105,9 @@ export default function AIInsightsPage() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-background via-background to-muted/20">
+      <div className="container mx-auto px-4 py-4 flex justify-end">
+        <CurrencyFilter availableCurrencies={availableCurrencies} />
+      </div>
       {error ? (
         <div className="container mx-auto py-16 px-4">
           <motion.div
