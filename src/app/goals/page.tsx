@@ -8,6 +8,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { useEffect } from 'react';
+import { ScrollToTop } from '@/components/ui/ScrollToTop';
 
 export default function GoalsPage() {
   const router = useRouter();
@@ -41,6 +42,7 @@ export default function GoalsPage() {
             <GoalsSection />
         {/* </div> */}
         <Footer />
+        <ScrollToTop />
     </>
   );
 }

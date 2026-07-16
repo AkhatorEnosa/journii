@@ -11,6 +11,7 @@ import type { AIAnalysisResponse, TradeMetrics } from '@/lib/ai-analysis';
 import { useCurrencyFilter } from '@/lib/currency-filter';
 import { CurrencyFilter } from '@/components/ui/CurrencyFilter';
 import { tradeService } from '@/lib/store';
+import { ScrollToTop } from '@/components/ui/ScrollToTop';
 
 export default function AIInsightsPage() {
   const { user } = useUser();
@@ -146,6 +147,7 @@ export default function AIInsightsPage() {
           availableCurrencies={availableCurrencies}
         />
       )}
+      <ScrollToTop />
     </div>
   );
 }

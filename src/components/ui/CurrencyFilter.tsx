@@ -54,13 +54,13 @@ export function CurrencyFilter({ availableCurrencies, className }: CurrencyFilte
         <div
           className={cn(
             "flex items-center gap-2 border border-border bg-background text-foreground hover:bg-accent",
-            "inline-flex shrink-0 items-center justify-center rounded-lg text-sm font-medium whitespace-nowrap",
+            "inline-flex shrink-0 items-center justify-center rounded-lg text-xs font-medium whitespace-nowrap",
             "transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-            "h-8 px-2.5",
+            "h-6 px-2.5",
             className
           )}
         >
-          <span className="text-sm font-medium uppercase">{getFilterLabel()}</span>
+          <span className="text-xs font-medium uppercase">{getFilterLabel()}</span>
           <ChevronDown className="h-4 w-4" />
         </div>
       </DropdownMenuTrigger>
