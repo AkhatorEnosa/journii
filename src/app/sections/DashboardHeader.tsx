@@ -129,7 +129,7 @@ function MobileMenuButton({
             exit={{ opacity: 0, rotate: 90 }}
             transition={{ duration: 0.2 }}
           >
-            <X className="size-6" />
+            <X className="size-4" />
           </motion.div>
         ) : (
           <motion.div
@@ -139,7 +139,7 @@ function MobileMenuButton({
             exit={{ opacity: 0, rotate: -90 }}
             transition={{ duration: 0.2 }}
           >
-            <Menu className="size-6" />
+            <Menu className="size-4" />
           </motion.div>
         )}
       </AnimatePresence>
@@ -193,7 +193,7 @@ const DashboardHeader = () => {
   return (
     <>
       <header className={`border-b border-border z-50 ${pathname !== '/dashboard' ? 'sticky top-0 bg-background/95 backdrop-blur-sm' : 'bg-transparent'}`}>
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 md:py-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link

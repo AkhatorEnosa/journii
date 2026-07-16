@@ -11,6 +11,7 @@ import DashboardHeader from '../sections/DashboardHeader';
 import Footer from '../sections/Footer';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { ScrollToTop } from '@/components/ui/ScrollToTop';
 
 // Default trading plan template
 const DEFAULT_TRADING_PLAN_TEMPLATE: Omit<TradingPlan, 'id' | 'userId' | 'createdAt' | 'updatedAt'> = {
@@ -249,6 +250,7 @@ export default function TradingPlansPage() {
         />
       </div>
       <Footer />
+      <ScrollToTop />
     </div>
   );
 }

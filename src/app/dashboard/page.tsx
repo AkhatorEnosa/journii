@@ -20,6 +20,7 @@ import DashboardHeader from '../sections/DashboardHeader';
 import Footer from '../sections/Footer';
 import { CurrencyFilter } from '@/components/ui/CurrencyFilter';
 import { useCurrencyFilter } from '@/lib/currency-filter';
+import { ScrollToTop } from '@/components/ui/ScrollToTop';
 
 type TimeFilter = 'all' | 'year' | 'month' | 'week';
 
@@ -417,7 +418,7 @@ export default function DashboardPage() {
       }
       {/* Header */}
       <DashboardHeader />
-      <header className="py-4 border-b border-border bg-card/80 backdrop-blur-sm md:sticky top-0 z-30">
+      <header className="py-4 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-30">
         <div className="container mx-auto px-4 md:py-4 flex flex-col md:flex-row md:items-center justify-between gap-2">
           {/* <div className="flex items-center gap-4"> */}
             <div>
@@ -429,20 +430,22 @@ export default function DashboardPage() {
             <div className='flex gap-2'>
               <Button
                 variant="outline"
-                onClick={() => router.push('/trading-plans')}
-                className="border-border text-foreground hover:bg-accent"
-              >
-                <ClipboardList className="w-4 h-4 mr-2" />
-                Trading Plans
-              </Button>
-
-              <Button
-                variant="outline"
+                size={"xs"}
                 onClick={() => router.push('/dashboard/ai-insights')}
                 className="w-fit border border-[#d4af37] text-[#d4af37] bg-[#d4af37]/10 hover:bg-[#d4af37] hover:text-white dark:border-[#d4af37] dark:text-[#d4af37] dark:bg-[#d4af37]/10 dark:hover:bg-[#d4af37] dark:hover:text-background"
               >
                 <Brain className="w-4 h-4 mr-2" />
                 AI Insights
+              </Button>
+
+              <Button
+                variant="outline"
+                size={"xs"}
+                onClick={() => router.push('/trading-plans')}
+                className="border-border text-foreground hover:bg-accent"
+              >
+                <ClipboardList className="w-4 h-4 mr-2" />
+                Trading Plans
               </Button>
             </div>
 
@@ -451,6 +454,7 @@ export default function DashboardPage() {
               <div className="relative">
                 <Button
                   variant="outline"
+                  size={"xs"}
                   onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
                   className="border-border text-foreground hover:bg-accent"
                 >
@@ -474,6 +478,7 @@ export default function DashboardPage() {
                         </div>
                         <Button
                           variant="ghost"
+                          size={"xs"}
                           className="w-full justify-start text-foreground hover:bg-accent"
                           onClick={() => {
                             const allTrades = dailyTotals.flatMap(d => d.trades);
@@ -525,6 +530,7 @@ export default function DashboardPage() {
 
               <Button
                 onClick={() => setIsModalOpen(true)}
+                size={"xs"}
                 className="bg-primary hover:bg-primary/90"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -548,7 +554,7 @@ export default function DashboardPage() {
         )}
 
         {/* Currencies & Time Filter */}
-        <div className="w-full mb-6 flex flex-col gap-1">
+        <div className="w-full mb-6 flex flex-col gap-2">
           <div className="w-full flex items-center justify-normal pb-2 md:pb-0 overflow-scroll md:justify-end gap-2">
             <span className="text-sm text-muted-foreground mr-2 font-semibold">Period:</span>
             {(['all', 'year', 'month', 'week'] as TimeFilter[]).map((filter) => (
@@ -915,6 +921,7 @@ export default function DashboardPage() {
       />
 
       <Footer />
+      <ScrollToTop />
     </div>
   );
 }

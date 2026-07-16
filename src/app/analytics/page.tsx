@@ -16,6 +16,7 @@ import PnLPieChart from '@/components/charts/PnLPieChart';
 import TopBottomCurrenciesChart from '@/components/charts/TopBottomCurrenciesChart';
 import { CurrencyFilter } from '@/components/ui/CurrencyFilter';
 import { useCurrencyFilter } from '@/lib/currency-filter';
+import { ScrollToTop } from '@/components/ui/ScrollToTop';
 
 export default function AnalyticsPage() {
   const router = useRouter();
@@ -359,7 +360,7 @@ export default function AnalyticsPage() {
       }
       <DashboardHeader />
       {/* Header */}
-      <header className="md:py-4 border-b border-border bg-card/80 backdrop-blur-sm md:sticky top-0 z-50">
+      <header className="md:py-4 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center justify-between group">
           <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4">
             <Button variant="ghost" onClick={() => router.back()} className="w-fit text-muted-foreground hover:text-foreground md:opacity-50 group-hover:opacity-100 group-hover:flex">
@@ -923,6 +924,7 @@ export default function AnalyticsPage() {
         </div>
       </main>
       <Footer />
+      <ScrollToTop />
     </div>
   );
 }
