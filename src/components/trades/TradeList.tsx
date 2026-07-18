@@ -38,6 +38,7 @@ interface TradeListProps {
 export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpenChange, onTradeMutation }: TradeListProps) {
   const [trades, setTrades] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
   const [editingTrade, setEditingTrade] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -134,6 +135,7 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
   const handleAddSubmit = async (newTrade: any) => {
     if (!user) return;
 
+    setIsSubmitting(true);
     try {
       // Check for duplicates first
       const duplicate = await tradeService.checkForDuplicate(user.id, newTrade);
@@ -143,6 +145,7 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
         setPendingTradeData(newTrade);
         setDuplicateTrade(duplicate);
         setIsDuplicateDialogOpen(true);
+        // Don't close the modal, keep it open for user to edit or cancel
         return;
       }
 
@@ -156,8 +159,24 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
       setIsAddModalOpen(false);
     } catch (err) {
       console.error('Failed to create trade:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  // Reset isSubmitting when add modal closes
+  useEffect(() => {
+    if (!isAddModalOpen) {
+      setIsSubmitting(false);
+    }
+  }, [isAddModalOpen]);
+
+  // Reset isSubmitting when edit modal closes
+  useEffect(() => {
+    if (!isEditModalOpen) {
+      setIsSubmitting(false);
+    }
+  }, [isEditModalOpen]);
 
   const handleDuplicateEditTrade = () => {
     // Close duplicate dialog
@@ -174,6 +193,7 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
     setIsDuplicateDialogOpen(false);
     setPendingTradeData(null);
     setDuplicateTrade(null);
+    setIsSubmitting(false);
   };
 
   const handleViewTrade = (trade: any) => {
@@ -184,6 +204,7 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
   const handleEditSubmit = async (updatedTrade: any) => {
     if (!user || !editingTrade) return;
 
+    setIsSubmitting(true);
     try {
       await tradeService.updateTrade(user.id, editingTrade.id, updatedTrade);
       // Invalidate queries to refetch data
@@ -195,6 +216,8 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
       setEditingTrade(null);
     } catch (err) {
       console.error('Failed to update trade:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -401,7 +424,7 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
           setEditingTrade(null);
         }}
         onSubmit={handleEditSubmit}
-        isLoading={isLoading}
+        isLoading={isSubmitting}
         trade={editingTrade}
       />
 
@@ -413,7 +436,7 @@ export default function TradeList({ selectedDate, isOpen: controlledOpen, onOpen
           setEditingTrade(null);
         }}
         onSubmit={handleAddSubmit}
-        isLoading={isLoading}
+        isLoading={isSubmitting}
         defaultDate={selectedDate}
       />
 
