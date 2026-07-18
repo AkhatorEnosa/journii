@@ -80,19 +80,6 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Reset isSubmitting when modal closes or trade changes
-  useEffect(() => {
-    if (!isOpen) {
-      setIsSubmitting(false);
-    }
-  }, [isOpen]);
-
-  // Also reset when trade prop changes (editing a different trade)
-  useEffect(() => {
-    setIsSubmitting(false);
-  }, [trade]);
 
   // Update form data when trade prop changes (for editing)
   useEffect(() => {
@@ -259,13 +246,9 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm() || isSubmitting || isLoading) {
+    if (!validateForm() || isLoading) {
       return;
     }
-
-    // Set local submitting state immediately to prevent double-clicks
-    // State will persist until modal closes or trade changes
-    setIsSubmitting(true);
 
     // Convert symbol to lowercase before submitting
     const dataWithLowercaseSymbol = {
@@ -274,7 +257,6 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
     };
 
     onSubmit(dataWithLowercaseSymbol);
-    // Note: isSubmitting will be reset when modal closes (via useEffect)
   };
 
   const handleTagAdd = (tag: string) => {
@@ -645,16 +627,16 @@ export default function TradeModal({ isOpen, onClose, onSubmit, trade, isLoading
               variant="ghost"
               onClick={onClose}
               className="text-muted-foreground hover:text-foreground"
-              disabled={isLoading || isSubmitting}
+              disabled={isLoading}
             >
               Cancel
             </Button>
             <Button
               type="submit"
               className="bg-primary hover:bg-primary/90"
-              disabled={isLoading || isSubmitting}
+              disabled={isLoading}
             >
-              {(isLoading || isSubmitting) ? (
+              {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Saving...
