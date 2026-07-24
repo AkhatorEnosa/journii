@@ -480,7 +480,7 @@ export default function AnalyticsPage() {
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
               <CardDescription className="text-muted-foreground">Profit Factor</CardDescription>
-              <CardTitle className={`text-2xl font-bold ${profitFactor >= 2 ? 'text-green-500' : profitFactor >= 1 ? 'text-yellow-500' : 'text-red-500'}`}>
+              <CardTitle className={`text-2xl font-bold ${profitFactor >= 2 ? 'text-emerald-500' : profitFactor >= 1 ? 'text-yellow-500' : 'text-rose-500'}`}>
                 {profitFactor === Infinity ? '∞' : profitFactor.toFixed(2)}
               </CardTitle>
             </CardHeader>
